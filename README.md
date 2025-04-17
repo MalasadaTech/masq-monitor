@@ -14,3 +14,5 @@ To monitor for USAA masquerades:
 <br>Method 3: Monitoring for scan tasks that use the official USAA favicon hash (or anyother official USAA hashes).
 
 The monitoring TTPs will need to be periodically updated as needed.
+
+It should output to a txt or PDF.
