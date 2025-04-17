@@ -9,8 +9,8 @@ It will most likely start with urlscan.io requests, and then expand from there. 
 Example:
 
 To monitor for USAA masquerades:
-Method 1: Monitoring for scan tasks that have "USAA" in the page.title.
-Method 2: Monitoring for scan tasks that have "usaa" in the domain.
-Method 3: Monitoring for scan tasks that use the official USAA favicon hash (or anyother official USAA hashes).
+<br>Method 1: Monitoring for scan tasks that have "USAA" in the page.title.
+<br>Method 2: Monitoring for scan tasks that have "usaa" in the domain.
+<br>Method 3: Monitoring for scan tasks that use the official USAA favicon hash (or anyother official USAA hashes).
 
 The monitoring TTPs will need to be periodically updated as needed.
