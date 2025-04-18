@@ -8,7 +8,7 @@
             "last_run": null
         },
         "usaa-title": {
-            "description": "Monitoring for scan tasks that have 'USAA' in the page title",
+            "description": "Monitoring for scan tasks that have 'Member Account Login | USAA' in the page title",
             "query": "page.title:\"Member Account Login | USAA\"",
             "last_run": null
         },
