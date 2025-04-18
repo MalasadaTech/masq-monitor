@@ -1,0 +1,26 @@
+{
+    "api_key": "YOUR_URLSCAN_API_KEY_HERE",
+    "output_directory": "output",
+    "queries": {
+        "usaa-domain": {
+            "description": "Monitoring for scan tasks that have 'usaa' in the domain",
+            "query": "domain:*usaa*",
+            "last_run": null
+        },
+        "usaa-title": {
+            "description": "Monitoring for scan tasks that have 'USAA' in the page title",
+            "query": "page.title:\"Member Account Login | USAA\"",
+            "last_run": null
+        },
+        "usaa-favicon": {
+            "description": "Monitoring for scan tasks that use the official USAA favicon hash",
+            "query": "hash:\"YOUR_USAA_FAVICON_HASH_HERE\"",
+            "last_run": null
+        },
+        "chase-domain": {
+            "description": "Monitoring for scan tasks that have 'chase' in the domain",
+            "query": "domain:*chase*",
+            "last_run": null
+        }
+    }
+}
