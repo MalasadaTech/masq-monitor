@@ -146,13 +146,16 @@ def main():
     
     monitor = MasqMonitor(config_path=args.config)
     
+    # Use default_days from config if --days not specified
+    days = args.days if args.days is not None else monitor.config.get("default_days")
+    
     if args.list:
         monitor.list_queries()
     elif args.query:
-        monitor.run_query(args.query, days=args.days)
+        monitor.run_query(args.query, days=days)
     elif args.all:
         for query_name in monitor.config.get("queries", {}):
-            monitor.run_query(query_name, days=args.days)
+            monitor.run_query(query_name, days=days)
     else:
         parser.print_help()
 

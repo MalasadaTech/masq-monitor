@@ -1,6 +1,7 @@
 {
     "api_key": "YOUR_URLSCAN_API_KEY_HERE",
     "output_directory": "output",
+    "default_days": 7,
     "queries": {
         "usaa-domain": {
             "description": "Monitoring for scan tasks that have 'usaa' in the domain",
