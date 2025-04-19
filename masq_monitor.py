@@ -6,6 +6,7 @@ import time
 import argparse
 import datetime
 import requests
+import base64
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
@@ -107,6 +108,7 @@ class MasqMonitor:
                     uuid = result["task"]["uuid"]
                     self._download_screenshot(uuid, img_dir / f"{uuid}.png", api_key)
                     result["local_screenshot"] = f"images/{uuid}.png"
+                    result["base64_screenshot"] = self._encode_image_to_base64(img_dir / f"{uuid}.png")
             
             # Generate the HTML report
             self._generate_html_report(results, query_name, run_dir)
@@ -149,6 +151,15 @@ class MasqMonitor:
         except requests.RequestException as e:
             print(f"Error downloading screenshot for {uuid}: {e}")
             return False
+
+    def _encode_image_to_base64(self, image_path):
+        """Encode an image file to Base64."""
+        try:
+            with open(image_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode("utf-8")
+        except Exception as e:
+            print(f"Error encoding image {image_path} to Base64: {e}")
+            return None
 
     def _generate_html_report(self, results, query_name, output_dir):
         """Generate an HTML report from the results."""
