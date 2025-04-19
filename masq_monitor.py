@@ -170,9 +170,32 @@ class MasqMonitor:
             print("No queries defined in the configuration.")
             return
         
-        print("Available queries:")
+        print("\nAvailable queries:")
+        print("==================")
         for name, details in self.config["queries"].items():
-            print(f" - {name}: {details.get('description', 'No description')}")
+            description = details.get('description', 'No description')
+            frequency = details.get('frequency', 'Not specified')
+            priority = details.get('priority', 'Not specified')
+            tags = ", ".join(details.get('tags', [])) or "None"
+            
+            print(f"\n{name}:")
+            print(f"  Description: {description}")
+            print(f"  Query: {details['query']}")
+            print(f"  Suggested Frequency: {frequency}")
+            print(f"  Priority: {priority}")
+            print(f"  Tags: {tags}")
+            
+            if "reference" in details:
+                print(f"  Reference: {details['reference']}")
+            
+            if "notes" in details:
+                print(f"  Notes: {details['notes']}")
+            
+            last_run = details.get("last_run")
+            if last_run:
+                print(f"  Last Run: {last_run}")
+            else:
+                print("  Last Run: Never")
 
 def main():
     parser = argparse.ArgumentParser(description="Monitor for masquerades using urlscan.io")
