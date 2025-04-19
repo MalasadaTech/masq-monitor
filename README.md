@@ -90,6 +90,7 @@ The configuration file is in JSON format with the following structure:
 {
     "api_key": "YOUR_URLSCAN_API_KEY",
     "output_directory": "output",
+    "default_days": 7,
     "queries": {
         "query-name": {
             "description": "Description of the query",
@@ -99,6 +100,13 @@ The configuration file is in JSON format with the following structure:
     }
 }
 ```
+
+### Configuration Options
+
+- `api_key`: Your urlscan.io API key for accessing the API.
+- `output_directory`: Directory to store reports and screenshots.
+- `default_days`: Default number of days to limit the search to if the `--days` flag is not specified. This prevents exceeding API limits by default.
+- `queries`: A map of named queries to execute against urlscan.io.
 
 ### Query Examples
 
@@ -137,6 +145,10 @@ output/
 ```
 
 ## Changelog
+
+### Version 0.1.2 (April 19, 2025)
+- Added configurable default look-back period via `default_days` in config
+- Query results now automatically use the default look-back period if `--days` flag is not specified
 
 ### Version 0.1.1 (April 18, 2025)
 - Added `-d/--days` flag to limit search results to a specific number of days
