@@ -6,22 +6,42 @@
         "usaa-domain": {
             "description": "Monitoring for scan tasks that have 'usaa' in the domain",
             "query": "domain:*usaa*",
-            "last_run": null
+            "last_run": null,
+            "reference": "https://www.usaa.com/security",
+            "notes": "This query captures domains containing 'usaa', which may indicate attempts to impersonate the financial institution",
+            "frequency": "daily",
+            "priority": "high",
+            "tags": ["financial", "usaa", "domain-monitoring"]
         },
         "usaa-title": {
             "description": "Monitoring for scan tasks that have 'Member Account Login | USAA' in the page title",
             "query": "page.title:\"Member Account Login | USAA\"",
-            "last_run": null
+            "last_run": null,
+            "reference": "https://www.usaa.com/inet/wc/security-alert-phishing",
+            "notes": "This query finds pages with the exact USAA login page title, which is a common phishing tactic",
+            "frequency": "daily",
+            "priority": "high",
+            "tags": ["financial", "usaa", "login-page"]
         },
         "usaa-favicon": {
             "description": "Monitoring for scan tasks that use the official USAA favicon hash",
             "query": "hash:\"YOUR_USAA_FAVICON_HASH_HERE\"",
-            "last_run": null
+            "last_run": null,
+            "reference": "https://www.usaa.com/favicon.ico",
+            "notes": "This query detects sites using the USAA favicon hash, which is often an indicator of phishing attempts",
+            "frequency": "daily",
+            "priority": "medium",
+            "tags": ["financial", "usaa", "favicon-matching"]
         },
         "chase-domain": {
             "description": "Monitoring for scan tasks that have 'chase' in the domain",
             "query": "domain:*chase*",
-            "last_run": null
+            "last_run": null,
+            "reference": "https://www.chase.com/digital/resources/privacy-security/security/report-fraud",
+            "notes": "This query identifies domains with 'chase' in the name, which may indicate attempts to impersonate Chase Bank",
+            "frequency": "weekly",
+            "priority": "high",
+            "tags": ["financial", "chase", "domain-monitoring"]
         }
     }
 }

@@ -95,11 +95,18 @@ The configuration file is in JSON format with the following structure:
         "query-name": {
             "description": "Description of the query",
             "query": "urlscan.io search query syntax",
-            "last_run": null
+            "last_run": null,
+            "reference": "Link to documentation or source for this query",
+            "notes": "Additional information about the query's purpose or interpretation",
+            "frequency": "daily",
+            "priority": "high",
+            "tags": ["phishing", "brand-protection"]
         }
     }
 }
 ```
+
+> **Note:** The queries in `config.example.json` are hypothetical examples to demonstrate the configuration structure. They are not guaranteed to return results and references may not be valid links. You should create your own queries based on your specific monitoring needs.
 
 ### Configuration Options
 
@@ -108,6 +115,11 @@ The configuration file is in JSON format with the following structure:
 - `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
 - `queries`: A map of named queries to execute against urlscan.io.
   - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
+  - `reference`: Optional link to documentation or source for the query.
+  - `notes`: Additional contextual information about the query.
+  - `frequency`: Suggested frequency for running this query (e.g., "daily", "weekly").
+  - `priority`: Indicates importance of the query (e.g., "high", "medium", "low").
+  - `tags`: List of keywords to categorize the query.
 
 ### Query Examples
 
@@ -147,6 +159,11 @@ output/
 
 ## Changelog
 
+### Version 0.1.5 (April 19, 2025)
+- Added query metadata options: reference, notes, frequency, priority, and tags
+- Enhanced query listing to display all metadata with improved formatting
+- Updated documentation with explanation of hypothetical example queries
+
 ### Version 0.1.4 (April 19, 2025)
 - Modified lookback logic to prioritize `last_run` timestamp before falling back to `default_days`
 - Improved console output to show which lookback method is being used for each query
@@ -174,6 +191,7 @@ output/
 ### Short-term (1-3 months)
 - ✓ Add date filtering to only show results since last check
 - ✓ Prioritize using `last_run` timestamp before falling back to `default_days`
+- ✓ Add query metadata options (reference, notes, frequency, priority, tags)
 - Implement email notifications for new findings
 - Support for custom report templates
 - Add ability to export results to CSV/JSON
