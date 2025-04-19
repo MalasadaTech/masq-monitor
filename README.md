@@ -146,6 +146,10 @@ output/
 
 ## Changelog
 
+### Version 0.1.3 (April 19, 2025)
+- Added automatic updating of `last_run` timestamp for each query after it is run
+- Queries now track when they were last executed for better monitoring
+
 ### Version 0.1.2 (April 19, 2025)
 - Added configurable default look-back period via `default_days` in config
 - Query results now automatically use the default look-back period if `--days` flag is not specified

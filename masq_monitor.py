@@ -29,6 +29,14 @@ class MasqMonitor:
             print(f"Error parsing the config file at {self.config_path}.")
             exit(1)
 
+    def _save_config(self):
+        """Save the updated configuration to the config file."""
+        try:
+            with open(self.config_path, 'w') as f:
+                json.dump(self.config, f, indent=4)
+        except Exception as e:
+            print(f"Error saving the config file: {e}")
+
     def run_query(self, query_name, days=None):
         """Run a specific query from the configuration.
         
@@ -78,6 +86,11 @@ class MasqMonitor:
             print(f"Report generated in {run_dir} with {len(results)} results")
         else:
             print(f"No results found for query '{query_name}'")
+        
+        # Update the last_run timestamp
+        current_time = datetime.datetime.now().isoformat()
+        self.config["queries"][query_name]["last_run"] = current_time
+        self._save_config()
 
     def _execute_urlscan_query(self, query, api_key):
         """Execute a query against the urlscan.io API."""
