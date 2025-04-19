@@ -43,6 +43,7 @@ class MasqMonitor:
         Args:
             query_name: Name of the query to run from config
             days: Optional. Number of days to limit the search to (from today)
+                 If not provided, uses last_run timestamp or falls back to default_days
         """
         if query_name not in self.config["queries"]:
             print(f"Query '{query_name}' not found in configuration.")
@@ -51,15 +52,41 @@ class MasqMonitor:
         query_config = self.config["queries"][query_name]
         api_key = self.config.get("api_key", "")
         
-        # Create the query string, adding date filter if days is specified
+        # Create the query string, adding date filter based on last_run or days parameter
         query_string = query_config["query"]
+        
+        # Determine the lookback period
         if days is not None:
-            # Calculate the date from N days ago
+            # Explicit days parameter takes precedence
             date_from = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime("%Y-%m-%d")
             query_string = f"{query_string} AND date:>={date_from}"
             print(f"Running query: {query_name} (limited to {days} days from {date_from})")
+        elif "last_run" in query_config and query_config["last_run"]:
+            # Use last run time if available
+            try:
+                last_run = datetime.datetime.fromisoformat(query_config["last_run"])
+                # Format as YYYY-MM-DD for the urlscan.io date filter
+                date_from = last_run.strftime("%Y-%m-%d")
+                query_string = f"{query_string} AND date:>={date_from}"
+                print(f"Running query: {query_name} (from last run on {date_from})")
+            except (ValueError, TypeError):
+                # Fall back to default_days if last_run is invalid
+                default_days = self.config.get("default_days")
+                if default_days is not None:
+                    date_from = (datetime.datetime.now() - datetime.timedelta(days=default_days)).strftime("%Y-%m-%d")
+                    query_string = f"{query_string} AND date:>={date_from}"
+                    print(f"Running query: {query_name} (limited to default {default_days} days from {date_from})")
+                else:
+                    print(f"Running query: {query_name} (no date filter)")
         else:
-            print(f"Running query: {query_name}")
+            # If no last_run and no days specified, try using default_days
+            default_days = self.config.get("default_days")
+            if default_days is not None:
+                date_from = (datetime.datetime.now() - datetime.timedelta(days=default_days)).strftime("%Y-%m-%d")
+                query_string = f"{query_string} AND date:>={date_from}"
+                print(f"Running query: {query_name} (limited to default {default_days} days from {date_from})")
+            else:
+                print(f"Running query: {query_name} (no date filter)")
         
         # Create a unique output directory for this run
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
