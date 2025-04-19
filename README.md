@@ -11,6 +11,14 @@ It takes a list of monitoring pivots, and performs API calls to check if there i
 
 It currently supports urlscan.io requests with plans to expand to other sources in the future. urlscan.io is used because they allow free API searches that should suffice for basic monitoring.
 
+## Features
+
+- Automatically queries urlscan.io for potential masquerade websites
+- Saves screenshots of detected sites
+- Generates standalone HTML reports with embedded screenshots
+- Tracks the last run timestamp for each query
+- Supports custom lookback periods for searches
+
 ## Example Monitoring Techniques
 
 To monitor for USAA masquerades:
@@ -145,7 +153,7 @@ hash:"fa6a5a3224d7da66d9e0bdec25f62cf0"
 
 ## Output
 
-The tool generates HTML reports in the output directory with the following structure:
+The tool generates standalone HTML reports in the output directory with the following structure:
 
 ```
 output/
@@ -157,7 +165,14 @@ output/
       ...
 ```
 
+The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
+
 ## Changelog
+
+### Version 0.1.6 (April 19, 2025)
+- Added Base64 embedding of PNG screenshots in HTML reports
+- Reports are now standalone files with no external dependencies
+- Maintained backward compatibility with file references as fallback
 
 ### Version 0.1.5 (April 19, 2025)
 - Added query metadata options: reference, notes, frequency, priority, and tags
