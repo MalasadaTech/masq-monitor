@@ -105,8 +105,9 @@ The configuration file is in JSON format with the following structure:
 
 - `api_key`: Your urlscan.io API key for accessing the API.
 - `output_directory`: Directory to store reports and screenshots.
-- `default_days`: Default number of days to limit the search to if the `--days` flag is not specified. This prevents exceeding API limits by default.
+- `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
 - `queries`: A map of named queries to execute against urlscan.io.
+  - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
 
 ### Query Examples
 
@@ -146,6 +147,10 @@ output/
 
 ## Changelog
 
+### Version 0.1.4 (April 19, 2025)
+- Modified lookback logic to prioritize `last_run` timestamp before falling back to `default_days`
+- Improved console output to show which lookback method is being used for each query
+
 ### Version 0.1.3 (April 19, 2025)
 - Added automatic updating of `last_run` timestamp for each query after it is run
 - Queries now track when they were last executed for better monitoring
@@ -168,6 +173,7 @@ output/
 
 ### Short-term (1-3 months)
 - ✓ Add date filtering to only show results since last check
+- ✓ Prioritize using `last_run` timestamp before falling back to `default_days`
 - Implement email notifications for new findings
 - Support for custom report templates
 - Add ability to export results to CSV/JSON
