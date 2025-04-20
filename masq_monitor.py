@@ -10,6 +10,7 @@ import base64
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 import re
+from urllib.parse import urlparse
 
 class MasqMonitor:
     def __init__(self, config_path="config.json"):
@@ -39,16 +40,37 @@ class MasqMonitor:
         except Exception as e:
             print(f"Error saving the config file: {e}")
 
+    def _defang_domain(self, domain):
+        """Defang a domain to make it safe for sharing."""
+        if not domain:
+            return ""
+        
+        # Replace dots with [.] in the domain
+        defanged_domain = re.sub(r'\.', '[.]', domain)
+        return defanged_domain
+
     def _defang_url(self, url):
         """Defang a URL to make it safe for sharing."""
         if not url:
             return ""
+        
+        # Parse the URL to separate domain from path
+        parsed_url = urlparse(url)
+        
         # Replace http:// with hxxp:// and https:// with hxxps://
-        defanged = re.sub(r'http://', 'hxxp://', url)
-        defanged = re.sub(r'https://', 'hxxps://', defanged)
-        # Replace dots with [.]
-        defanged = re.sub(r'\.', '[.]', defanged)
-        return defanged
+        defanged_scheme = re.sub(r'http', 'hxxp', parsed_url.scheme)
+        
+        # Replace dots with [.] only in the netloc (domain) part
+        defanged_netloc = re.sub(r'\.', '[.]', parsed_url.netloc)
+        
+        # Reconstruct the URL with defanged parts but keep the path intact
+        defanged_url = f"{defanged_scheme}://{defanged_netloc}{parsed_url.path}"
+        if parsed_url.query:
+            defanged_url += f"?{parsed_url.query}"
+        if parsed_url.fragment:
+            defanged_url += f"#{parsed_url.fragment}"
+            
+        return defanged_url
 
     def run_query(self, query_name, days=None):
         """Run a specific query from the configuration.
@@ -126,7 +148,7 @@ class MasqMonitor:
                 if "page" in result and "url" in result["page"]:
                     result["defanged_url"] = self._defang_url(result["page"]["url"])
                 if "page" in result and "domain" in result["page"]:
-                    result["defanged_domain"] = self._defang_url(result["page"]["domain"])
+                    result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
             
             # Generate the HTML report
             self._generate_html_report(results, query_name, run_dir)

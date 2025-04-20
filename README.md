@@ -175,6 +175,12 @@ The HTML reports are self-contained files with all screenshots embedded as Base6
 
 ## Changelog
 
+### Version 0.2.0 (April 20, 2025)
+- Fixed URL defanging to preserve filenames in their original form
+- Added specialized domain defanging function to properly handle domains
+- Improved security of IOC handling while maintaining readability
+- Fixed issue with domains showing unexpected protocol prefix in reports
+
 ### Version 0.1.9 (April 19, 2025)
 - Added query metadata display in HTML reports
 - Query reference, notes, frequency, priority, and tags are now shown in reports when available
