@@ -19,6 +19,9 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Dark mode support with user preference memory
 - Tracks the last run timestamp for each query
 - Supports custom lookback periods for searches
+- Defangs IOCs (URLs and domains) in reports for safer sharing
+- Customizable report username
+- Branded footer with project links
 
 ## Example Monitoring Techniques
 
@@ -122,6 +125,7 @@ The configuration file is in JSON format with the following structure:
 - `api_key`: Your urlscan.io API key for accessing the API.
 - `output_directory`: Directory to store reports and screenshots.
 - `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
+- `report_username`: Your name or username to be displayed in generated reports.
 - `queries`: A map of named queries to execute against urlscan.io.
   - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
   - `reference`: Optional link to documentation or source for the query.
@@ -169,6 +173,12 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.1.8 (April 19, 2025)
+- Added URL and domain defanging for safer IOC handling
+- Added customizable report username in configuration
+- Updated report footer with GitHub project link and MalasadaTech branding
+- Improved template to display the report generator's username
 
 ### Version 0.1.7 (April 19, 2025)
 - Added dark mode support to HTML reports
