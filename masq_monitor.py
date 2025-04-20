@@ -9,6 +9,7 @@ import requests
 import base64
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
+import re
 
 class MasqMonitor:
     def __init__(self, config_path="config.json"):
@@ -37,6 +38,17 @@ class MasqMonitor:
                 json.dump(self.config, f, indent=4)
         except Exception as e:
             print(f"Error saving the config file: {e}")
+
+    def _defang_url(self, url):
+        """Defang a URL to make it safe for sharing."""
+        if not url:
+            return ""
+        # Replace http:// with hxxp:// and https:// with hxxps://
+        defanged = re.sub(r'http://', 'hxxp://', url)
+        defanged = re.sub(r'https://', 'hxxps://', defanged)
+        # Replace dots with [.]
+        defanged = re.sub(r'\.', '[.]', defanged)
+        return defanged
 
     def run_query(self, query_name, days=None):
         """Run a specific query from the configuration.
@@ -109,6 +121,12 @@ class MasqMonitor:
                     self._download_screenshot(uuid, img_dir / f"{uuid}.png", api_key)
                     result["local_screenshot"] = f"images/{uuid}.png"
                     result["base64_screenshot"] = self._encode_image_to_base64(img_dir / f"{uuid}.png")
+                
+                # Defang all URLs and domains in the result
+                if "page" in result and "url" in result["page"]:
+                    result["defanged_url"] = self._defang_url(result["page"]["url"])
+                if "page" in result and "domain" in result["page"]:
+                    result["defanged_domain"] = self._defang_url(result["page"]["domain"])
             
             # Generate the HTML report
             self._generate_html_report(results, query_name, run_dir)
@@ -169,7 +187,8 @@ class MasqMonitor:
         html_content = template.render(
             query_name=query_name,
             timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            results=results
+            results=results,
+            username=self.config.get("report_username", "")
         )
         
         with open(output_dir / "report.html", 'w', encoding='utf-8') as f:
