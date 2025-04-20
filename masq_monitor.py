@@ -172,7 +172,7 @@ class MasqMonitor:
             results=results
         )
         
-        with open(output_dir / "report.html", 'w') as f:
+        with open(output_dir / "report.html", 'w', encoding='utf-8') as f:
             f.write(html_content)
 
     def list_queries(self):

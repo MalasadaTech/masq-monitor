@@ -16,6 +16,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Automatically queries urlscan.io for potential masquerade websites
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
+- Dark mode support with user preference memory
 - Tracks the last run timestamp for each query
 - Supports custom lookback periods for searches
 
@@ -168,6 +169,11 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.1.7 (April 19, 2025)
+- Added dark mode support to HTML reports
+- Implemented theme toggle with user preference memory
+- Reports now automatically use system preferences for initial theme
 
 ### Version 0.1.6 (April 19, 2025)
 - Added Base64 embedding of PNG screenshots in HTML reports
