@@ -184,8 +184,12 @@ class MasqMonitor:
         env = Environment(loader=FileSystemLoader("templates"))
         template = env.get_template("report_template.html")
         
+        # Get query data including metadata
+        query_data = self.config["queries"].get(query_name, {})
+        
         html_content = template.render(
             query_name=query_name,
+            query_data=query_data,
             timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             results=results,
             username=self.config.get("report_username", "")

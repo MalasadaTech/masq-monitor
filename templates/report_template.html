@@ -16,6 +16,9 @@
             --footer-color: #777777;
             --meta-color: #777777;
             --card-bg: #ffffff;
+            --metadata-bg: rgba(0,0,0,0.03);
+            --tag-bg: #0366d6;
+            --tag-text: #ffffff;
         }
         
         [data-theme="dark"] {
@@ -29,6 +32,9 @@
             --footer-color: #aaaaaa;
             --meta-color: #aaaaaa;
             --card-bg: #2d2d2d;
+            --metadata-bg: rgba(255,255,255,0.05);
+            --tag-bg: #0d50a0;
+            --tag-text: #e0e0e0;
         }
         
         body {
@@ -50,7 +56,7 @@
             margin-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: var(--text-color);
             margin-top: 0;
         }
@@ -59,6 +65,41 @@
             font-size: 0.9em;
             margin-bottom: 10px;
         }
+        
+        /* Metadata section styling */
+        .metadata-section {
+            background-color: var(--metadata-bg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .metadata-section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .metadata-item {
+            margin: 8px 0;
+        }
+        
+        .metadata-label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .tag {
+            display: inline-block;
+            background-color: var(--tag-bg);
+            color: var(--tag-text);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 6px;
+            margin-bottom: 4px;
+        }
+        
         .results {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -173,6 +214,54 @@
                 {% endif %}
             </div>
         </header>
+
+        {% if query_data %}
+        <div class="meta">
+            <p>{{ query_data.get('description', 'No description available') }}</p>
+            <p>Search query: <code>{{ query_data.get('query', 'No query specified') }}</code></p>
+        </div>
+        
+        {% set has_metadata = query_data.get('reference') or query_data.get('notes') or query_data.get('frequency') or query_data.get('priority') or query_data.get('tags') %}
+        {% if has_metadata %}
+        <div class="metadata-section">
+            <h3>Query Metadata</h3>
+            
+            {% if query_data.get('reference') %}
+            <div class="metadata-item">
+                <span class="metadata-label">Reference:</span>
+                <a href="{{ query_data.reference }}" target="_blank" rel="noopener noreferrer">{{ query_data.reference }}</a>
+            </div>
+            {% endif %}
+            
+            {% if query_data.get('notes') %}
+            <div class="metadata-item">
+                <span class="metadata-label">Notes:</span> {{ query_data.notes }}
+            </div>
+            {% endif %}
+            
+            {% if query_data.get('frequency') %}
+            <div class="metadata-item">
+                <span class="metadata-label">Frequency:</span> {{ query_data.frequency }}
+            </div>
+            {% endif %}
+            
+            {% if query_data.get('priority') %}
+            <div class="metadata-item">
+                <span class="metadata-label">Priority:</span> {{ query_data.priority }}
+            </div>
+            {% endif %}
+            
+            {% if query_data.get('tags') and query_data.tags|length > 0 %}
+            <div class="metadata-item">
+                <span class="metadata-label">Tags:</span>
+                {% for tag in query_data.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
 
         <main>
             <h2>Results ({{ results|length }})</h2>
