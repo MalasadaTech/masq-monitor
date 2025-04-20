@@ -16,6 +16,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Automatically queries urlscan.io for potential masquerade websites
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
+- Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Dark mode support with user preference memory
 - Tracks the last run timestamp for each query
 - Supports custom lookback periods for searches
@@ -173,6 +174,12 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.1.9 (April 19, 2025)
+- Added query metadata display in HTML reports
+- Query reference, notes, frequency, priority, and tags are now shown in reports when available
+- Improved report styling with metadata section and tag formatting
+- Metadata section only appears when non-null metadata values exist
 
 ### Version 0.1.8 (April 19, 2025)
 - Added URL and domain defanging for safer IOC handling
