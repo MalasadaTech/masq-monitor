@@ -37,6 +37,20 @@
             "description_tlp_level": "clear",
             "query_tlp_level": "green",
             "default_tlp_level": "clear",
+            "titles": [
+                {
+                    "title": "PHISHING SITES MASQUERADING AS USAA",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "PHISHING SITES MASQUERADING AS USAA - by page title",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "PHISHING SITES MASQUERADING AS USAA - by page title - (Internal tracking number or something really kewl that you should share with your friend MalasadaTech!)",
+                    "tlp_level": "red"
+                }
+            ],
             "notes": [
                 {
                     "tlp_level": "clear",
