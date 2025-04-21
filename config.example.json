@@ -144,6 +144,40 @@
             "last_run": null,
             "days": 7
         },
+        "usaa-monitoring": {
+            "type": "query_group",
+            "description": "Comprehensive monitoring for USAA masquerades using multiple detection methods",
+            "description_tlp_level": "clear",
+            "default_tlp_level": "green",
+            "queries": ["usaa-domain", "usaa-title", "usaa-favicon"],
+            "titles": [
+                {
+                    "title": "USAA MASQUERADE MONITORING - COMBINED REPORT",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "USAA MASQUERADE MONITORING - COMPREHENSIVE DETECTION",
+                    "tlp_level": "amber"
+                }
+            ],
+            "notes": [
+                {
+                    "tlp_level": "green",
+                    "text": "This group combines multiple detection methods for a comprehensive view of USAA masquerade attempts."
+                },
+                {
+                    "tlp_level": "amber",
+                    "text": "The combined approach detects phishing sites through domain patterns, page titles, and favicon hashes."
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "clear",
+            "priority": "High",
+            "priority_tlp_level": "clear",
+            "tags": ["financial", "usaa", "combined-monitoring"],
+            "tags_tlp_level": "clear",
+            "last_run": null
+        },
         "chase-domain": {
             "query": "domain:*chase*",
             "description": "Monitoring for scan tasks that have 'chase' in the domain",
@@ -188,6 +222,40 @@
             "tags_tlp_level": "clear",
             "last_run": null,
             "days": 7
+        },
+        "banking-group": {
+            "type": "query_group",
+            "description": "Monitoring for banking-related masquerades including USAA and Chase",
+            "description_tlp_level": "clear",
+            "default_tlp_level": "green",
+            "queries": ["usaa-monitoring", "chase-domain"],
+            "titles": [
+                {
+                    "title": "FINANCIAL INSTITUTIONS MASQUERADE MONITORING",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "BANKING PHISHING CAMPAIGN COMPREHENSIVE REPORT",
+                    "tlp_level": "green"
+                }
+            ],
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This is a comprehensive monitoring group for financial institutions masquerades."
+                },
+                {
+                    "tlp_level": "green",
+                    "text": "The group combines USAA monitoring (which includes domain, title, and favicon detection) with Chase domain monitoring."
+                }
+            ],
+            "frequency": "Weekly",
+            "frequency_tlp_level": "clear",
+            "priority": "High",
+            "priority_tlp_level": "clear",
+            "tags": ["financial", "banking", "comprehensive-monitoring"],
+            "tags_tlp_level": "clear",
+            "last_run": null
         },
         "example-query": {
             "query": "domain:example.com",

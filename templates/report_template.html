@@ -435,6 +435,32 @@
                 display: none !important;
             }
         }
+
+        /* Query Section Styling */
+        .query-section {
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .query-section h3 {
+            padding: 10px 15px;
+            background-color: var(--header-bg);
+            border-radius: 5px 5px 0 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .query-section-meta {
+            padding: 0 15px;
+            margin-bottom: 15px;
+            color: var(--meta-color);
+        }
+        
+        .query-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -741,41 +767,98 @@
             <h2>Results ({{ results|length }})</h2>
 
             {% if results %}
-                <div class="results">
-                {% for result in results %}
-                    <div class="result-card">
-                        {% if result.base64_screenshot %}
-                        <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
-                        {% elif result.local_screenshot %}
-                        <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
-                        {% endif %}
-                        
-                        <dl class="result-info">
-                            <dt>URL:</dt>
-                            <dd class="url">
-                                {{ result.defanged_url if result.defanged_url else result.page.url }}
-                            </dd>
+                {% if is_group_report and query_sections %}
+                    <!-- Group report - organize by query sections -->
+                    {% for section in query_sections %}
+                        <div class="query-section">
+                            <h3>{{ section.name }} {% if section.type == "query_group" %}(Query Group){% endif %}</h3>
+                            <div class="query-section-meta">
+                                {% if section.config.description %}
+                                <p>{{ section.config.description }}</p>
+                                {% endif %}
+                                <p>Results: {{ section.results_count }}</p>
+                            </div>
+
+                            <div class="results">
+                            {% for result in results %}
+                                {% if result.source_query == section.name %}
+                                <div class="result-card">
+                                    {% if result.base64_screenshot %}
+                                    <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                                    {% elif result.local_screenshot %}
+                                    <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                                    {% endif %}
+                                    
+                                    <dl class="result-info">
+                                        <dt>Source Query:</dt>
+                                        <dd>{{ result.source_query }}</dd>
+
+                                        <dt>URL:</dt>
+                                        <dd class="url">
+                                            {{ result.defanged_url if result.defanged_url else result.page.url }}
+                                        </dd>
+                                        
+                                        <dt>Domain:</dt>
+                                        <dd>{{ result.defanged_domain if result.defanged_domain else result.page.domain }}</dd>
+                                        
+                                        <dt>Page Title:</dt>
+                                        <dd>{{ result.page.title }}</dd>
+                                        
+                                        <dt>IP Address:</dt>
+                                        <dd>{{ result.page.ip }}</dd>
+                                        
+                                        <dt>Scan Date:</dt>
+                                        <dd>{{ result.task.time }}</dd>
+                                        
+                                        <dt>URLScan Link:</dt>
+                                        <dd>
+                                            <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
+                                        </dd>
+                                    </dl>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Standard single-query report -->
+                    <div class="results">
+                    {% for result in results %}
+                        <div class="result-card">
+                            {% if result.base64_screenshot %}
+                            <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                            {% elif result.local_screenshot %}
+                            <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                            {% endif %}
                             
-                            <dt>Domain:</dt>
-                            <dd>{{ result.defanged_domain if result.defanged_domain else result.page.domain }}</dd>
-                            
-                            <dt>Page Title:</dt>
-                            <dd>{{ result.page.title }}</dd>
-                            
-                            <dt>IP Address:</dt>
-                            <dd>{{ result.page.ip }}</dd>
-                            
-                            <dt>Scan Date:</dt>
-                            <dd>{{ result.task.time }}</dd>
-                            
-                            <dt>URLScan Link:</dt>
-                            <dd>
-                                <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
-                            </dd>
-                        </dl>
+                            <dl class="result-info">
+                                <dt>URL:</dt>
+                                <dd class="url">
+                                    {{ result.defanged_url if result.defanged_url else result.page.url }}
+                                </dd>
+                                
+                                <dt>Domain:</dt>
+                                <dd>{{ result.defanged_domain if result.defanged_domain else result.page.domain }}</dd>
+                                
+                                <dt>Page Title:</dt>
+                                <dd>{{ result.page.title }}</dd>
+                                
+                                <dt>IP Address:</dt>
+                                <dd>{{ result.page.ip }}</dd>
+                                
+                                <dt>Scan Date:</dt>
+                                <dd>{{ result.task.time }}</dd>
+                                
+                                <dt>URLScan Link:</dt>
+                                <dd>
+                                    <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
+                                </dd>
+                            </dl>
+                        </div>
+                    {% endfor %}
                     </div>
-                {% endfor %}
-                </div>
+                {% endif %}
             {% else %}
                 <p>No results found for this query.</p>
             {% endif %}

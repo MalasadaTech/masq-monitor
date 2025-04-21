@@ -18,6 +18,8 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Generates standalone HTML reports with embedded screenshots
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Supports TLP (Traffic Light Protocol) classification for information sharing control
+- Supports query groups for organizing related queries and generating comprehensive reports
+- Allows hierarchical organization with nested query groups
 - Dark mode support with user preference memory
 - Interactive image viewer for examining thumbnails in full-screen mode
 - Tracks the last run timestamp for each query
@@ -98,6 +100,14 @@ python masq_monitor.py --list
 python masq_monitor.py --query usaa-domain
 ```
 
+### Run a Query Group
+
+```
+python masq_monitor.py --query-group usaa-monitoring
+```
+
+Query groups run multiple related queries and create a combined report with sections for each query.
+
 ### Limit Results to a Specific Number of Days
 
 Especially useful for initial runs to avoid processing too many results:
@@ -114,10 +124,28 @@ This limits the search to results from the last 7 days.
 python masq_monitor.py --all
 ```
 
+This runs all individual queries (not query groups).
+
+### Run All Query Groups
+
+```
+python masq_monitor.py --all-groups
+```
+
+This runs all query groups defined in the configuration.
+
+### Run All Queries and Query Groups
+
+You can combine the --all and --all-groups flags:
+
+```
+python masq_monitor.py --all --all-groups
+```
+
 You can also limit all queries to a timeframe:
 
 ```
-python masq_monitor.py --all -d 30
+python masq_monitor.py --all --all-groups -d 30
 ```
 
 ### Specify Custom Config and API Key Files
@@ -194,6 +222,40 @@ The configuration file is in JSON format with the following structure:
             "tags_tlp_level": "green",
             "days": 7,
             "last_run": "2025-04-20T23:59:54.633456"
+        },
+        "usaa-monitoring": {
+            "type": "query_group",
+            "description": "Comprehensive monitoring for USAA masquerades using multiple detection methods",
+            "description_tlp_level": "clear",
+            "default_tlp_level": "green",
+            "queries": ["usaa-domain", "usaa-title", "usaa-favicon"],
+            "titles": [
+                {
+                    "title": "USAA MASQUERADE MONITORING - COMBINED REPORT",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "USAA MASQUERADE MONITORING - COMPREHENSIVE DETECTION",
+                    "tlp_level": "amber"
+                }
+            ],
+            "notes": [
+                {
+                    "tlp_level": "green",
+                    "text": "This group combines multiple detection methods for a comprehensive view of USAA masquerade attempts."
+                },
+                {
+                    "tlp_level": "amber",
+                    "text": "The combined approach detects phishing sites through domain patterns, page titles, and favicon hashes."
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "clear",
+            "priority": "High",
+            "priority_tlp_level": "clear",
+            "tags": ["financial", "usaa", "combined-monitoring"],
+            "tags_tlp_level": "clear",
+            "last_run": null
         }
     }
 }
@@ -217,6 +279,24 @@ The configuration file is in JSON format with the following structure:
   - `frequency`: Suggested frequency for running this query (e.g., "daily", "weekly").
   - `priority`: Indicates importance of the query (e.g., "high", "medium", "low").
   - `tags`: List of keywords to categorize the query.
+
+### Query Group Configuration
+
+Query groups allow you to organize related queries and generate combined reports. A query group is defined with the following options:
+
+- `type`: Must be set to "query_group" to identify this entry as a query group rather than a regular query.
+- `queries`: An array of query names (or other query groups) that belong to this group.
+- `description`: Description of the query group's purpose.
+- `description_tlp_level`: TLP classification for the description.
+- `default_tlp_level`: Default TLP classification for the group report.
+- `titles`: Array of titles with TLP classifications, similar to regular queries.
+- `notes`, `references`, `frequency`, `priority`, `tags`: Same metadata fields as regular queries.
+- `last_run`: Timestamp of when the group was last executed.
+
+Query groups can be nested, allowing for a hierarchical organization of your monitoring activities. For example:
+- A "banking-group" query group might contain:
+  - The "usaa-monitoring" query group (which itself contains individual queries)
+  - The "chase-domain" query
 
 ### Query Examples
 
@@ -244,10 +324,22 @@ hash:"fa6a5a3224d7da66d9e0bdec25f62cf0"
 
 The tool generates standalone HTML reports in the output directory with the following structure:
 
+For individual queries:
 ```
 output/
   query-name_YYYYMMDD_HHMMSS/
-    report.html
+    report_query-name_YYYYMMDD_HHMMSS_TLP-level.html
+    images/
+      [scan-uuid1].png
+      [scan-uuid2].png
+      ...
+```
+
+For query groups:
+```
+output/
+  group-name_YYYYMMDD_HHMMSS_group/
+    report_group-name_YYYYMMDD_HHMMSS_TLP-level.html
     images/
       [scan-uuid1].png
       [scan-uuid2].png
@@ -257,6 +349,14 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.4.0 (April 20, 2025)
+- Added support for query groups to organize related queries
+- Implemented hierarchical query structure with nested query groups
+- Added group report generation with sections for each individual query
+- Group reports combine results from all queries with source tracking
+- Added new command-line options for managing query groups
+- Updated HTML template to properly display grouped results
 
 ### Version 0.3.3 (April 20, 2025)
 - Added support for custom templates per query
@@ -344,6 +444,7 @@ The HTML reports are self-contained files with all screenshots embedded as Base6
 - ✓ Add date filtering to only show results since last check
 - ✓ Prioritize using `last_run` timestamp before falling back to `default_days`
 - ✓ Add query metadata options (reference, notes, frequency, priority, tags)
+- ✓ Add query groups for organizing related queries and generating comprehensive reports
 - Implement email notifications for new findings
 - Support for custom report templates
 - Add ability to export results to CSV/JSON
