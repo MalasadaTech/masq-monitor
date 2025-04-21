@@ -1,5 +1,4 @@
 {
-    "api_key": "your_urlscan_io_api_key",
     "output_directory": "output",
     "default_days": 7,
     "report_username": "Your Name",

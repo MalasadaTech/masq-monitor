@@ -3,6 +3,7 @@ output/
 
 # Configuration files
 config.json
+api_key.json
 
 # Python-related files
 __pycache__/

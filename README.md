@@ -24,6 +24,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Defangs IOCs (URLs and domains) in reports for safer sharing
 - Customizable report username
 - Branded footer with project links
+- API keys stored in separate file for easier team sharing of monitoring configurations
 
 ## Example Monitoring Techniques
 
@@ -52,7 +53,35 @@ pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
-4. Edit `config.json` with your urlscan.io API key and desired monitoring queries.
+4. Create your API key file:
+```
+cp api_key.example.json api_key.json
+```
+
+5. Edit `api_key.json` with your urlscan.io API key:
+```json
+{
+    "urlscan_api_key": "YOUR_URLSCAN_API_KEY"
+}
+```
+
+6. Edit `config.json` with your desired monitoring queries.
+
+## API Key Configuration
+
+The API key is stored separately from the main configuration to make sharing monitoring configurations easier within teams. Store your URLScan.io API key in `api_key.json`:
+
+```json
+{
+    "urlscan_api_key": "YOUR_URLSCAN_API_KEY"
+}
+```
+
+This file is included in `.gitignore` to prevent accidentally committing your API key.
+
+## Team Sharing
+
+With this setup, team members can share their configuration files (queries, reporting preferences, etc.) without exposing their API keys. Simply share the `config.json` file, and each team member can use their own `api_key.json` file.
 
 ## Usage
 
@@ -90,10 +119,10 @@ You can also limit all queries to a timeframe:
 python masq_monitor.py --all -d 30
 ```
 
-### Specify a Custom Config File
+### Specify Custom Config and API Key Files
 
 ```
-python masq_monitor.py --config my_custom_config.json --all
+python masq_monitor.py --config my_custom_config.json --api-key-file my_api_key.json --all
 ```
 
 ### Override Default TLP Level
@@ -112,7 +141,6 @@ The configuration file is in JSON format with the following structure:
 
 ```json
 {
-    "api_key": "YOUR_URLSCAN_API_KEY",
     "output_directory": "output",
     "default_days": 7,
     "report_username": "Your Name",
@@ -172,7 +200,6 @@ The configuration file is in JSON format with the following structure:
 
 ### Configuration Options
 
-- `api_key`: Your urlscan.io API key for accessing the API.
 - `output_directory`: Directory to store reports and screenshots.
 - `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
 - `report_username`: Your name or username to be displayed in generated reports.
