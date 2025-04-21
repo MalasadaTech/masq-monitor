@@ -174,7 +174,23 @@
             top: 20px;
             right: 20px;
             z-index: 100;
-            display: flex;
+        }
+        
+        .settings-cog {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+        
+        .theme-toggle-panel {
+            display: none;
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            position: absolute;
+            right: 0;
+            top: 30px;
             align-items: center;
             gap: 8px;
         }
@@ -216,6 +232,13 @@
         
         .icon {
             font-size: 1.2rem;
+        }
+
+        /* Hide theme toggle when printing */
+        @media print {
+            .theme-toggle {
+                display: none !important;
+            }
         }
 
         /* TLP styling */
@@ -269,10 +292,13 @@
     </div>
 
     <div class="theme-toggle">
-        <span class="icon">🌞</span>
-        <input type="checkbox" id="theme-toggle" />
-        <label for="theme-toggle"></label>
-        <span class="icon">🌙</span>
+        <span class="settings-cog" id="settings-cog">⚙️</span>
+        <div class="theme-toggle-panel" id="theme-toggle-panel">
+            <span class="icon">🌞</span>
+            <input type="checkbox" id="theme-toggle" />
+            <label for="theme-toggle"></label>
+            <span class="icon">🌙</span>
+        </div>
     </div>
 
     <div class="container">
@@ -294,7 +320,7 @@
             {% set desc_level = query_data.description_tlp_level|default('clear') %}
             {% set report_level = tlp_level|default('clear') %}
             
-            {% if tlp_order[desc_level]|default(999) <= tlp_order[report_level]|default(999) %}
+            {% if tlp_order[desc_level]|default(1) <= tlp_order[report_level]|default(4) %}
                 <p>
                     {% if query_data.description_tlp_level %}
                         <span class="tlp portion-marking tlp-{{ query_data.description_tlp_level }}">TLP:{{ query_data.description_tlp_level }}</span>
@@ -304,7 +330,7 @@
             {% endif %}
             
             {% set query_level = query_data.query_tlp_level|default('clear') %}
-            {% if tlp_order[query_level]|default(999) <= tlp_order[report_level]|default(999) %}
+            {% if tlp_order[query_level]|default(1) <= tlp_order[report_level]|default(4) %}
                 <p>
                     {% if query_data.query_tlp_level %}
                         <span class="tlp portion-marking tlp-{{ query_data.query_tlp_level }}">TLP:{{ query_data.query_tlp_level }}</span>
@@ -331,7 +357,7 @@
                             {% set note_level = note.tlp_level|default('clear') %}
                             {% set report_level = tlp_level|default('clear') %}
                             
-                            {% if tlp_order[note_level]|default(999) <= tlp_order[report_level]|default(999) %}
+                            {% if tlp_order[note_level]|default(1) <= tlp_order[report_level]|default(4) %}
                                 <li>
                                     {% if note.tlp_level %}
                                         <span class="tlp portion-marking tlp-{{ note.tlp_level }}">TLP:{{ note.tlp_level }}</span>
@@ -359,7 +385,7 @@
                 {% for reference in query_data.references %}
                     {% if reference is mapping %}
                         {% set ref_level = reference.tlp_level|default('clear') %}
-                        {% if tlp_order[ref_level]|default(999) <= tlp_order[report_level]|default(999) %}
+                        {% if tlp_order[ref_level]|default(1) <= tlp_order[report_level]|default(4) %}
                             {% set has_visible_references = true %}
                         {% endif %}
                     {% else %}
@@ -373,7 +399,7 @@
                         {% if reference is mapping %}
                             {% set ref_level = reference.tlp_level|default('clear') %}
                             
-                            {% if tlp_order[ref_level]|default(999) <= tlp_order[report_level]|default(999) %}
+                            {% if tlp_order[ref_level]|default(1) <= tlp_order[report_level]|default(4) %}
                                 <li>
                                     {% if reference.tlp_level %}
                                         <span class="tlp portion-marking tlp-{{ reference.tlp_level }}">TLP:{{ reference.tlp_level }}</span>
@@ -401,7 +427,7 @@
                 {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
                 {% set report_level = tlp_level|default('clear') %}
                 
-                {% if tlp_order[freq_tlp_level]|default(1) <= tlp_order[report_level]|default(999) %}
+                {% if tlp_order[freq_tlp_level]|default(1) <= tlp_order[report_level]|default(4) %}
                 <div class="metadata-item">
                     <span class="metadata-label">Frequency:</span> 
                     {% if freq_tlp_level != 'clear' %}
@@ -417,7 +443,7 @@
                 {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
                 {% set report_level = tlp_level|default('clear') %}
                 
-                {% if tlp_order[priority_tlp_level]|default(1) <= tlp_order[report_level]|default(999) %}
+                {% if tlp_order[priority_tlp_level]|default(1) <= tlp_order[report_level]|default(4) %}
                 <div class="metadata-item">
                     <span class="metadata-label">Priority:</span>
                     {% if priority_tlp_level != 'clear' %}
@@ -433,7 +459,7 @@
                 {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
                 {% set report_level = tlp_level|default('clear') %}
                 
-                {% if tlp_order[tags_tlp_level]|default(1) <= tlp_order[report_level]|default(999) %}
+                {% if tlp_order[tags_tlp_level]|default(1) <= tlp_order[report_level]|default(4) %}
                 <div class="metadata-item">
                     <span class="metadata-label">Tags:</span>
                     {% if tags_tlp_level != 'clear' %}
@@ -447,6 +473,64 @@
             {% endif %}
         </div>
         {% endif %}
+        {% endif %}
+
+        {% if debug %}
+        <div class="metadata-section">
+            <h3>Debug Information</h3>
+            <div class="debug-info">
+                <h4>TLP Level: {{ tlp_level }}</h4>
+                <h4>References Debug:</h4>
+                <pre>{{ debug_info | default('Debug info not available') }}</pre>
+                
+                <h4>Raw References Data:</h4>
+                <pre>{{ query_data.references | tojson(indent=2) }}</pre>
+                
+                <h4>TLP Order:</h4>
+                <pre>clear: 1, white: 1, green: 2, amber: 3, red: 4</pre>
+                
+                <h4>Reference Visibility Check:</h4>
+                <ul>
+                {% for reference in query_data.references %}
+                    {% if reference is mapping %}
+                        {% set ref_level = reference.tlp_level|default('clear') %}
+                        {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+                        {% set report_level = tlp_level|default('clear') %}
+                        <li>
+                            Reference TLP: {{ ref_level }} (order: {{ tlp_order[ref_level]|default(1) }})<br>
+                            Report TLP: {{ report_level }} (order: {{ tlp_order[report_level]|default(4) }})<br>
+                            Should be visible: {{ tlp_order[ref_level]|default(1) <= tlp_order[report_level]|default(4) }}
+                        </li>
+                    {% else %}
+                        <li>Reference (without mapping): {{ reference }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </div>
+            
+            <style>
+                .debug-info {
+                    background-color: #f8f8f8;
+                    border: 1px solid #ddd;
+                    padding: 15px;
+                    border-radius: 5px;
+                    overflow: auto;
+                }
+                .debug-info pre {
+                    background-color: #eee;
+                    padding: 10px;
+                    border-radius: 3px;
+                    white-space: pre-wrap;
+                }
+                [data-theme="dark"] .debug-info {
+                    background-color: #333;
+                    border-color: #444;
+                }
+                [data-theme="dark"] .debug-info pre {
+                    background-color: #222;
+                }
+            </style>
+        </div>
         {% endif %}
 
         <main>
@@ -506,6 +590,8 @@
     <script>
         // Theme toggle functionality
         const themeToggle = document.getElementById('theme-toggle');
+        const settingsCog = document.getElementById('settings-cog');
+        const themePanel = document.getElementById('theme-toggle-panel');
         
         // Check for saved theme preference or use system preference
         const savedTheme = localStorage.getItem('theme') || 
@@ -525,6 +611,32 @@
             } else {
                 document.documentElement.removeAttribute('data-theme');
                 localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Toggle settings panel with cog icon
+        settingsCog.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (themePanel.style.display === 'flex') {
+                themePanel.style.display = 'none';
+            } else {
+                themePanel.style.display = 'flex';
+            }
+        });
+        
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            if (themePanel.style.display === 'flex' && 
+                !themePanel.contains(e.target) && 
+                e.target !== settingsCog) {
+                themePanel.style.display = 'none';
+            }
+        });
+        
+        // Close panel with escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && themePanel.style.display === 'flex') {
+                themePanel.style.display = 'none';
             }
         });
     </script>
