@@ -414,14 +414,21 @@
             display: flex;
             align-items: center;
             flex-wrap: wrap;
+            gap: 8px;
         }
         
         .report-title strong {
             font-size: 1.25em;
             font-weight: bold;
-            margin-left: 5px;
         }
         
+        .report-title .tlp {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+        }
+
         /* Hide modal when printing */
         @media print {
             .image-modal {
@@ -494,6 +501,7 @@
                         {% endif %}
                         <strong>{{ report_title }}</strong>
                     {% else %}
+                        <span class="tlp portion-marking tlp-{{ tlp_level }}">TLP:{{ tlp_level }}</span>
                         <strong>{{ query_name }}</strong>
                     {% endif %}
                 </p>
