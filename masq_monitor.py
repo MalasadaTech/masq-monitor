@@ -82,10 +82,13 @@ class MasqMonitor:
                  If not provided, uses last_run timestamp or falls back to default_days
             tlp_level: Optional. TLP level to apply to this report
                       If not provided, uses query default or global default
+                      
+        Returns:
+            List of results from the query
         """
         if query_name not in self.config["queries"]:
             print(f"Query '{query_name}' not found in configuration.")
-            return
+            return []
         
         query_config = self.config["queries"][query_name]
         api_key = self.config.get("api_key", "")
@@ -167,6 +170,8 @@ class MasqMonitor:
         current_time = datetime.datetime.now().isoformat()
         self.config["queries"][query_name]["last_run"] = current_time
         self._save_config()
+        
+        return results
 
     def _determine_tlp_level(self, query_name, requested_tlp=None):
         """Determine the appropriate TLP level for the report.
@@ -269,7 +274,7 @@ class MasqMonitor:
             print(f"Error encoding image {image_path} to Base64: {e}")
             return None
 
-    def _generate_html_report(self, results, query_name, output_dir, tlp_level="clear", timestamp=None):
+    def _generate_html_report(self, results, query_name, output_dir, tlp_level="clear", timestamp=None, debug=False):
         """Generate an HTML report from the results."""
         env = Environment(loader=FileSystemLoader("templates"))
         template = env.get_template("report_template.html")
@@ -287,7 +292,8 @@ class MasqMonitor:
             timestamp=timestamp,
             results=results,
             username=self.config.get("report_username", ""),
-            tlp_level=tlp_level
+            tlp_level=tlp_level,
+            debug=debug
         )
         
         # Extract the date/time group from the output directory
@@ -300,6 +306,53 @@ class MasqMonitor:
         report_filename = f"report_{query_name}_{datetime_part}_TLP-{tlp_level}.html"
         with open(output_dir / report_filename, 'w', encoding='utf-8') as f:
             f.write(html_content)
+
+    def save_urlscan_results(self, query_name, results, timestamp=None):
+        """Save urlscan results to a JSON file for testing.
+        
+        Args:
+            query_name: Name of the query
+            results: List of urlscan result objects
+            timestamp: Optional timestamp to use in the filename
+        
+        Returns:
+            Path to the saved results file
+        """
+        if timestamp is None:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+        # Create a directory for saved results if it doesn't exist
+        cache_dir = Path("cached_results")
+        cache_dir.mkdir(exist_ok=True)
+        
+        # Create a filename with the query name and timestamp
+        cache_file = cache_dir / f"{query_name}_{timestamp}_results.json"
+        
+        # Save the results to a JSON file
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2)
+            
+        print(f"Saved urlscan results to {cache_file}")
+        return cache_file
+        
+    def load_urlscan_results(self, file_path):
+        """Load saved urlscan results from a JSON file.
+        
+        Args:
+            file_path: Path to the JSON file containing saved results
+        
+        Returns:
+            List of urlscan result objects
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                results = json.load(f)
+                
+            print(f"Loaded {len(results)} results from {file_path}")
+            return results
+        except Exception as e:
+            print(f"Error loading saved results: {e}")
+            return []
 
     def list_queries(self):
         """List all available queries from the configuration."""
@@ -334,6 +387,80 @@ class MasqMonitor:
             else:
                 print("  Last Run: Never")
 
+    def test_report_generation(self, query_name, cached_results_path, tlp_level=None, debug=False):
+        """Generate a test report using saved results without querying urlscan.
+        
+        Args:
+            query_name: Name of the query for metadata
+            cached_results_path: Path to JSON file with saved urlscan results
+            tlp_level: Optional TLP level for the report
+            debug: Whether to include debug information in the report
+            
+        Returns:
+            Path to the generated report
+        """
+        print(f"Generating test report for '{query_name}' using cached results")
+        
+        # Load the saved results
+        results = self.load_urlscan_results(cached_results_path)
+        if not results:
+            print("No results loaded, cannot generate report")
+            return None
+        
+        # Determine the appropriate TLP level
+        report_tlp = self._determine_tlp_level(query_name, tlp_level)
+        print(f"Report TLP level: {report_tlp}")
+        
+        # Create a unique output directory for this test
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_dir = self.output_dir / f"{query_name}_{timestamp}_test"
+        run_dir.mkdir(exist_ok=True)
+        
+        # Save the images directory
+        img_dir = run_dir / "images"
+        img_dir.mkdir(exist_ok=True)
+        
+        # Process the results for display
+        for i, result in enumerate(results):
+            # Defang URLs and domains
+            if "page" in result and "url" in result["page"]:
+                result["defanged_url"] = self._defang_url(result["page"]["url"])
+            if "page" in result and "domain" in result["page"]:
+                result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
+                
+            # Handle screenshots if available in the cached results
+            if "task" in result and "uuid" in result["task"]:
+                uuid = result["task"]["uuid"]
+                result["local_screenshot"] = f"images/{uuid}.png"
+
+        # Add debug information if requested
+        query_data = self.config["queries"].get(query_name, {})
+        if debug:
+            print("Adding debug information to the report...")
+            # Add a debug section to show JSON representations of key data
+            debug_info = {
+                "query_data": query_data,
+                "tlp_level": report_tlp,
+                "references": query_data.get("references", []),
+                "tlp_order": {"clear": 1, "white": 1, "green": 2, "amber": 3, "red": 4}
+            }
+            
+            for result in results:
+                result["debug_info"] = json.dumps(debug_info, indent=2)
+        
+        # Generate the HTML report
+        report_path = self._generate_html_report(
+            results, 
+            query_name, 
+            run_dir, 
+            report_tlp, 
+            timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            debug=debug
+        )
+        
+        print(f"Test report generated in {run_dir}")
+        return report_path
+
 def main():
     parser = argparse.ArgumentParser(description="Monitor for masquerades using urlscan.io")
     parser.add_argument("--config", default="config.json", help="Path to configuration file")
@@ -344,6 +471,14 @@ def main():
     parser.add_argument("--tlp", choices=["clear", "white", "green", "amber", "red"], 
                         help="Set the TLP level for the report")
     
+    # Add new testing options
+    parser.add_argument("--save-results", action="store_true", 
+                        help="Save urlscan.io results to a JSON file for testing")
+    parser.add_argument("--cached-results", 
+                        help="Path to a JSON file with saved urlscan.io results")
+    parser.add_argument("--debug", action="store_true", 
+                        help="Include debug information in reports")
+    
     args = parser.parse_args()
     
     monitor = MasqMonitor(config_path=args.config)
@@ -353,8 +488,14 @@ def main():
     
     if args.list:
         monitor.list_queries()
+    elif args.query and args.cached_results:
+        # Generate test report using cached results
+        monitor.test_report_generation(args.query, args.cached_results, tlp_level=args.tlp, debug=args.debug)
     elif args.query:
-        monitor.run_query(args.query, days=days, tlp_level=args.tlp)
+        # Run query and optionally save the results
+        results = monitor.run_query(args.query, days=days, tlp_level=args.tlp)
+        if args.save_results and results:
+            monitor.save_urlscan_results(args.query, results)
     elif args.all:
         for query_name in monitor.config.get("queries", {}):
             monitor.run_query(query_name, days=days, tlp_level=args.tlp)
