@@ -377,43 +377,43 @@
             {% if query_data.references %}
             <div class="metadata-item">
                 <span class="metadata-label">References:</span>
-                {% set has_visible_references = false %}
-                {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
-                {% set report_level = tlp_level|default('clear') %}
                 
-                {# First pass to check if we have any visible references #}
+                {% set visible_references = [] %}
+                
                 {% for reference in query_data.references %}
                     {% if reference is mapping %}
-                        {% set ref_level = reference.tlp_level|default('clear') %}
-                        {% if tlp_order[ref_level]|default(1) <= tlp_order[report_level]|default(4) %}
-                            {% set has_visible_references = true %}
+                        {% set ref_tlp = reference.tlp_level|default('clear') %}
+                        {% if tlp_level == 'red' or
+                              (tlp_level == 'amber' and ref_tlp in ['clear', 'green', 'amber']) or
+                              (tlp_level == 'green' and ref_tlp in ['clear', 'green']) or
+                              (tlp_level in ['clear', 'white'] and ref_tlp in ['clear', 'white']) %}
+                            {% set _ = visible_references.append(reference) %}
                         {% endif %}
                     {% else %}
-                        {% set has_visible_references = true %}
+                        {% set _ = visible_references.append(reference) %}
                     {% endif %}
                 {% endfor %}
                 
-                {% if has_visible_references %}
+                {% if visible_references|length > 0 %}
                     <ul>
-                    {% for reference in query_data.references %}
-                        {% if reference is mapping %}
-                            {% set ref_level = reference.tlp_level|default('clear') %}
-                            
-                            {% if tlp_order[ref_level]|default(1) <= tlp_order[report_level]|default(4) %}
-                                <li>
-                                    {% if reference.tlp_level %}
-                                        <span class="tlp portion-marking tlp-{{ reference.tlp_level }}">TLP:{{ reference.tlp_level }}</span>
-                                    {% endif %}
-                                    {% if reference.url and reference.url.startswith('http') %}
-                                        <a href="{{ reference.url }}" target="_blank">{{ reference.url }}</a>
-                                    {% else %}
-                                        {{ reference.url }}
-                                    {% endif %}
-                                </li>
+                    {% for reference in visible_references %}
+                        <li>
+                            {% if reference is mapping %}
+                                {% if reference.tlp_level %}
+                                    <span class="tlp portion-marking tlp-{{ reference.tlp_level }}">TLP:{{ reference.tlp_level }}</span>
+                                {% endif %}
+                                {% if reference.url and reference.url.startswith('http') %}
+                                    <a href="{{ reference.url }}" target="_blank">{{ reference.text if reference.text else reference.url }}</a>
+                                {% else %}
+                                    {{ reference.text if reference.text else reference.url }}
+                                {% endif %}
+                                {% if reference.description %}
+                                    - {{ reference.description }}
+                                {% endif %}
+                            {% else %}
+                                {{ reference }}
                             {% endif %}
-                        {% else %}
-                            <li>{{ reference }}</li>
-                        {% endif %}
+                        </li>
                     {% endfor %}
                     </ul>
                 {% else %}
