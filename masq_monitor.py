@@ -302,11 +302,29 @@ class MasqMonitor:
 
     def _generate_html_report(self, results, query_name, output_dir, tlp_level="clear", timestamp=None, debug=False):
         """Generate an HTML report from the results."""
-        env = Environment(loader=FileSystemLoader("templates"))
-        template = env.get_template("report_template.html")
-        
         # Get query data including metadata
         query_data = self.config["queries"].get(query_name, {})
+        
+        # Check if query has a specific template path
+        template_path = query_data.get("template_path")
+        
+        # If no query-specific template, use the global default
+        if not template_path:
+            template_path = self.config.get("default_template_path", "templates/report_template.html")
+            
+        # Split template path into directory and filename
+        template_dir = os.path.dirname(template_path)
+        template_file = os.path.basename(template_path)
+        
+        # Create Jinja2 environment with the appropriate template directory
+        env = Environment(loader=FileSystemLoader(template_dir if template_dir else "templates"))
+        try:
+            template = env.get_template(template_file)
+        except Exception as e:
+            print(f"Error loading template {template_path}: {e}")
+            print("Falling back to default template")
+            env = Environment(loader=FileSystemLoader("templates"))
+            template = env.get_template("report_template.html")
         
         # Use the provided timestamp or generate current time
         if timestamp is None:

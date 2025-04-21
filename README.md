@@ -146,6 +146,7 @@ The configuration file is in JSON format with the following structure:
     "default_days": 7,
     "report_username": "Your Name",
     "default_tlp_level": "clear",
+    "default_template_path": "templates/report_template.html",
     "queries": {
         "usaa-title": {
             "query": "page.title:\"Member Account Login | USAA\"",
@@ -153,6 +154,7 @@ The configuration file is in JSON format with the following structure:
             "description_tlp_level": "clear",
             "query_tlp_level": "green",
             "default_tlp_level": "clear",
+            "template_path": "templates/custom_template.html",
             "notes": [
                 {
                     "tlp_level": "clear",
@@ -204,10 +206,12 @@ The configuration file is in JSON format with the following structure:
 - `output_directory`: Directory to store reports and screenshots.
 - `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
 - `report_username`: Your name or username to be displayed in generated reports.
+- `default_template_path`: The default template to use for all queries that don't have a specific template.
 - `queries`: A map of named queries to execute against urlscan.io.
   - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
   - `query_tlp_level`: TLP (Traffic Light Protocol) classification for the query itself. Determines how sensitive the search pattern is. Values: "clear", "green", "amber", "red".
   - `default_tlp_level`: Default TLP classification for report content. Used for report elements without their own explicit TLP level. Values: "clear", "green", "amber", "red".
+  - `template_path`: Optional per-query HTML template to use for the report. If not specified, falls back to the global `default_template_path`.
   - `reference`: Optional link to documentation or source for the query.
   - `notes`: Additional contextual information about the query.
   - `frequency`: Suggested frequency for running this query (e.g., "daily", "weekly").
@@ -253,6 +257,12 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.3.3 (April 20, 2025)
+- Added support for custom templates per query
+- Added `default_template_path` config option to set the global default template
+- Added `template_path` option per query to specify a custom template
+- Improved error handling for template loading with fallback to default template
 
 ### Version 0.3.2 (April 20, 2025)
 - Fixed TLP color rendering when printing reports to PDF
