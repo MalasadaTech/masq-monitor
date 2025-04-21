@@ -3,6 +3,7 @@
     "default_days": 7,
     "report_username": "Your Name",
     "default_tlp_level": "clear",
+    "default_template_path": "templates/report_template.html",
     "queries": {
         "usaa-domain": {
             "query": "domain:*usaa*",
@@ -51,6 +52,7 @@
             "description_tlp_level": "clear",
             "query_tlp_level": "green",
             "default_tlp_level": "clear",
+            "template_path": "templates/report_template.html",
             "titles": [
                 {
                     "title": "PHISHING SITES MASQUERADING AS USAA",
