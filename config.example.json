@@ -10,6 +10,20 @@
             "description_tlp_level": "clear",
             "query_tlp_level": "clear",
             "default_tlp_level": "clear",
+            "titles": [
+                {
+                    "title": "SUSPICIOUS DOMAINS CONTAINING USAA",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "USAA DOMAIN SQUATTING CAMPAIGN DETECTION",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "USAA DOMAIN MONITORING - INTERNAL INCIDENT #20250420-112",
+                    "tlp_level": "red"
+                }
+            ],
             "notes": [
                 {
                     "tlp_level": "clear",
@@ -93,6 +107,20 @@
             "description_tlp_level": "clear",
             "query_tlp_level": "clear",
             "default_tlp_level": "clear",
+            "titles": [
+                {
+                    "title": "SITES USING USAA BRANDING ELEMENTS",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "USAA FAVICON MATCH DETECTION - PHISHING CAMPAIGN",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "USAA FAVICON HASH MONITORING - THREAT ACTOR GROUP TA551",
+                    "tlp_level": "amber"
+                }
+            ],
             "notes": [
                 {
                     "tlp_level": "clear",
@@ -120,6 +148,24 @@
             "description_tlp_level": "clear",
             "query_tlp_level": "clear",
             "default_tlp_level": "clear",
+            "titles": [
+                {
+                    "title": "CHASE BANK DOMAIN IMPERSONATION REPORT",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "CHASE BANK DOMAIN SQUATTING - TARGETED CAMPAIGN",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "CHASE BANK TARGETED PHISHING CAMPAIGN - OPERATION GHOSTCLICK",
+                    "tlp_level": "amber"
+                },
+                {
+                    "title": "CHASE BANK DOMAINS - APT29 INFRASTRUCTURE MAP #JP-2025-04",
+                    "tlp_level": "red"
+                }
+            ],
             "notes": [
                 {
                     "tlp_level": "clear",
@@ -147,6 +193,16 @@
             "description_tlp_level": "clear",
             "query_tlp_level": "clear",
             "default_tlp_level": "clear",
+            "titles": [
+                {
+                    "title": "EXAMPLE.COM DOMAIN MONITORING",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "EXAMPLE.COM DOMAIN ANALYSIS - POTENTIAL SECURITY EVENT",
+                    "tlp_level": "green"
+                }
+            ],
             "notes": [
                 {
                     "tlp_level": "clear",
