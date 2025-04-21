@@ -282,6 +282,39 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            
+            /* Preserve dark theme when printing if it was selected */
+            @page {
+                margin: 0.5cm;
+            }
+            
+            body {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            /* Preserve dark theme colors if document had dark theme applied */
+            html[data-theme="dark"] {
+                filter: none !important;
+                background-color: var(--background-color) !important;
+                color: var(--text-color) !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            html[data-theme="dark"] body,
+            html[data-theme="dark"] .container,
+            html[data-theme="dark"] header,
+            html[data-theme="dark"] main,
+            html[data-theme="dark"] .metadata-section,
+            html[data-theme="dark"] .result-card,
+            html[data-theme="dark"] .footer {
+                background-color: var(--background-color) !important;
+                color: var(--text-color) !important;
+                border-color: var(--border-color) !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
         }
 
         /* TLP styling */

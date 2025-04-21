@@ -254,6 +254,12 @@ The HTML reports are self-contained files with all screenshots embedded as Base6
 
 ## Changelog
 
+### Version 0.3.2 (April 20, 2025)
+- Fixed TLP color rendering when printing reports to PDF
+- Added CSS rules to ensure background colors are correctly displayed in PDF output
+- Preserved dark theme when printing to PDF if dark theme was selected in the UI
+- Enhanced print media queries for better PDF export support
+
 ### Version 0.3.1 (April 20, 2025)
 - Added interactive image viewer to expand screenshots to full view when clicked
 - Implemented close functionality via X button, clicking outside the image, or pressing the Escape key
