@@ -140,6 +140,11 @@
             width: 100%;
             border: 1px solid var(--border-color);
             margin-bottom: 10px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .thumbnail:hover {
+            opacity: 0.8;
         }
         .result-info dt {
             font-weight: bold;
@@ -284,6 +289,58 @@
             font-size: 1.2em;
             border-bottom: 1px solid var(--border-color);
         }
+
+        /* Image Modal for thumbnails */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: auto;
+        }
+        
+        .modal-image {
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        
+        .close-modal:hover {
+            background-color: rgba(255, 0, 0, 0.5);
+        }
+
+        /* Hide modal when printing */
+        @media print {
+            .image-modal {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -299,6 +356,12 @@
             <label for="theme-toggle"></label>
             <span class="icon">🌙</span>
         </div>
+    </div>
+
+    <!-- Image Modal for expanded view -->
+    <div id="imageModal" class="image-modal">
+        <span class="close-modal">&times;</span>
+        <img id="expandedImage" class="modal-image">
     </div>
 
     <div class="container">
@@ -637,6 +700,51 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && themePanel.style.display === 'flex') {
                 themePanel.style.display = 'none';
+            }
+        });
+
+        // Image modal functionality
+        const imageModal = document.getElementById('imageModal');
+        const expandedImage = document.getElementById('expandedImage');
+        const closeModal = document.querySelector('.close-modal');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        
+        // Add click event to all thumbnail images
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                imageModal.style.display = 'flex';
+                expandedImage.src = this.src;
+                expandedImage.alt = this.alt;
+                document.body.style.overflow = 'hidden'; // Prevent scrolling while modal is open
+            });
+        });
+        
+        // Close modal when clicking the X button
+        closeModal.addEventListener('click', function() {
+            imageModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        });
+        
+        // Close modal when clicking anywhere on the background
+        imageModal.addEventListener('click', function(e) {
+            if (e.target === imageModal) {
+                imageModal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Restore scrolling
+            }
+        });
+        
+        // Close modal with escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // First check if theme panel is open and close that
+                if (themePanel.style.display === 'flex') {
+                    themePanel.style.display = 'none';
+                }
+                // Then check if image modal is open and close that
+                else if (imageModal.style.display === 'flex') {
+                    imageModal.style.display = 'none';
+                    document.body.style.overflow = 'auto'; // Restore scrolling
+                }
             }
         });
     </script>

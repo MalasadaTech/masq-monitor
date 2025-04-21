@@ -19,6 +19,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Supports TLP (Traffic Light Protocol) classification for information sharing control
 - Dark mode support with user preference memory
+- Interactive image viewer for examining thumbnails in full-screen mode
 - Tracks the last run timestamp for each query
 - Supports custom lookback periods for searches
 - Defangs IOCs (URLs and domains) in reports for safer sharing
@@ -252,6 +253,11 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.3.1 (April 20, 2025)
+- Added interactive image viewer to expand screenshots to full view when clicked
+- Implemented close functionality via X button, clicking outside the image, or pressing the Escape key
+- Enhanced user experience by providing better visualization of screenshot details
 
 ### Version 0.3.0 (April 21, 2025)
 - Added TLP (Traffic Light Protocol) support for reports
