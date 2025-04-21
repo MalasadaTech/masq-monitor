@@ -244,6 +244,77 @@
             .theme-toggle {
                 display: none !important;
             }
+            
+            /* Ensure TLP colors are printed */
+            .tlp-clear {
+                background-color: var(--tlp-clear-bg) !important;
+                color: var(--tlp-clear-text) !important;
+                border: 1px solid var(--tlp-clear-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tlp-green {
+                background-color: var(--tlp-green-bg) !important;
+                color: var(--tlp-green-text) !important;
+                border: 1px solid var(--tlp-green-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tlp-amber {
+                background-color: var(--tlp-amber-bg) !important;
+                color: var(--tlp-amber-text) !important;
+                border: 1px solid var(--tlp-amber-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tlp-red {
+                background-color: var(--tlp-red-bg) !important;
+                color: var(--tlp-red-text) !important;
+                border: 1px solid var(--tlp-red-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .overall-tlp-banner {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .portion-marking {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            /* Preserve dark theme when printing if it was selected */
+            @page {
+                margin: 0.5cm;
+            }
+            
+            body {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            /* Preserve dark theme colors if document had dark theme applied */
+            html[data-theme="dark"] {
+                filter: none !important;
+                background-color: var(--background-color) !important;
+                color: var(--text-color) !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            html[data-theme="dark"] body,
+            html[data-theme="dark"] .container,
+            html[data-theme="dark"] header,
+            html[data-theme="dark"] main,
+            html[data-theme="dark"] .metadata-section,
+            html[data-theme="dark"] .result-card,
+            html[data-theme="dark"] .footer {
+                background-color: var(--background-color) !important;
+                color: var(--text-color) !important;
+                border-color: var(--border-color) !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
         }
 
         /* TLP styling */
