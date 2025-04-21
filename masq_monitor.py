@@ -13,9 +13,11 @@ import re
 from urllib.parse import urlparse
 
 class MasqMonitor:
-    def __init__(self, config_path="config.json"):
+    def __init__(self, config_path="config.json", api_key_path="api_key.json"):
         self.config_path = config_path
+        self.api_key_path = api_key_path
         self.config = self._load_config()
+        self.urlscan_api_key = self._load_api_key()
         self.output_dir = Path(self.config.get("output_directory", "output"))
         self.output_dir.mkdir(exist_ok=True)
         self.tlp_levels = ["clear", "white", "green", "amber", "red"]
@@ -32,6 +34,29 @@ class MasqMonitor:
         except json.JSONDecodeError:
             print(f"Error parsing the config file at {self.config_path}.")
             exit(1)
+
+    def _load_api_key(self):
+        """Load API key from a separate file."""
+        try:
+            with open(self.api_key_path, 'r') as f:
+                api_data = json.load(f)
+                return api_data.get("urlscan_api_key", "")
+        except FileNotFoundError:
+            # Check if API key exists in config for backward compatibility
+            legacy_api_key = self.config.get("api_key", "")
+            if legacy_api_key:
+                print(f"API key file not found at {self.api_key_path}. Using API key from config.json.")
+                print("Consider moving your API key to api_key.json for better security and sharing capabilities.")
+                return legacy_api_key
+            else:
+                print(f"API key file not found at {self.api_key_path}.")
+                print("Please create it based on api_key.example.json.")
+                print("You can continue without an API key, but some features may be limited.")
+                return ""
+        except json.JSONDecodeError:
+            print(f"Error parsing the API key file at {self.api_key_path}.")
+            print("Using empty API key.")
+            return ""
 
     def _save_config(self):
         """Save the updated configuration to the config file."""
@@ -91,7 +116,6 @@ class MasqMonitor:
             return []
         
         query_config = self.config["queries"][query_name]
-        api_key = self.config.get("api_key", "")
         
         # Determine the appropriate TLP level
         report_tlp = self._determine_tlp_level(query_name, tlp_level)
@@ -143,14 +167,14 @@ class MasqMonitor:
         img_dir.mkdir(exist_ok=True)
         
         # Execute the query
-        results = self._execute_urlscan_query(query_string, api_key)
+        results = self._execute_urlscan_query(query_string)
         
         if results:
             # Download thumbnails for each result
             for i, result in enumerate(results):
                 if "task" in result and "uuid" in result["task"]:
                     uuid = result["task"]["uuid"]
-                    self._download_screenshot(uuid, img_dir / f"{uuid}.png", api_key)
+                    self._download_screenshot(uuid, img_dir / f"{uuid}.png")
                     result["local_screenshot"] = f"images/{uuid}.png"
                     result["base64_screenshot"] = self._encode_image_to_base64(img_dir / f"{uuid}.png")
                 
@@ -234,9 +258,10 @@ class MasqMonitor:
                             
         return highest_level
 
-    def _execute_urlscan_query(self, query, api_key):
+    def _execute_urlscan_query(self, query, api_key=None):
         """Execute a query against the urlscan.io API."""
-        headers = {"API-Key": api_key} if api_key else {}
+        # Use the class-level API key by default
+        headers = {"API-Key": self.urlscan_api_key} if self.urlscan_api_key else {}
         
         url = f"https://urlscan.io/api/v1/search/?q={query}"
         try:
@@ -248,9 +273,10 @@ class MasqMonitor:
             print(f"Error executing query: {e}")
             return []
 
-    def _download_screenshot(self, uuid, output_path, api_key):
+    def _download_screenshot(self, uuid, output_path, api_key=None):
         """Download the screenshot for a specific scan."""
-        headers = {"API-Key": api_key} if api_key else {}
+        # Use the class-level API key by default
+        headers = {"API-Key": self.urlscan_api_key} if self.urlscan_api_key else {}
         
         url = f"https://urlscan.io/screenshots/{uuid}.png"
         try:
@@ -464,6 +490,7 @@ class MasqMonitor:
 def main():
     parser = argparse.ArgumentParser(description="Monitor for masquerades using urlscan.io")
     parser.add_argument("--config", default="config.json", help="Path to configuration file")
+    parser.add_argument("--api-key-file", default="api_key.json", help="Path to API key file")
     parser.add_argument("--list", action="store_true", help="List available queries")
     parser.add_argument("--query", help="Run a specific query")
     parser.add_argument("--all", action="store_true", help="Run all queries")
@@ -481,7 +508,7 @@ def main():
     
     args = parser.parse_args()
     
-    monitor = MasqMonitor(config_path=args.config)
+    monitor = MasqMonitor(config_path=args.config, api_key_path=args.api_key_file)
     
     # Use default_days from config if --days not specified
     days = args.days if args.days is not None else monitor.config.get("default_days")
