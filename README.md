@@ -17,6 +17,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
+- Supports TLP (Traffic Light Protocol) classification for information sharing control
 - Dark mode support with user preference memory
 - Tracks the last run timestamp for each query
 - Supports custom lookback periods for searches
@@ -95,6 +96,16 @@ python masq_monitor.py --all -d 30
 python masq_monitor.py --config my_custom_config.json --all
 ```
 
+### Override Default TLP Level
+
+You can override the default TLP level specified in the configuration file:
+
+```
+python masq_monitor.py --query usaa-domain --tlp red
+```
+
+This will generate the report with a TLP:RED classification regardless of the default setting in the config file.
+
 ## Configuration
 
 The configuration file is in JSON format with the following structure:
@@ -104,16 +115,54 @@ The configuration file is in JSON format with the following structure:
     "api_key": "YOUR_URLSCAN_API_KEY",
     "output_directory": "output",
     "default_days": 7,
+    "report_username": "Your Name",
+    "default_tlp_level": "clear",
     "queries": {
-        "query-name": {
-            "description": "Description of the query",
-            "query": "urlscan.io search query syntax",
-            "last_run": null,
-            "reference": "Link to documentation or source for this query",
-            "notes": "Additional information about the query's purpose or interpretation",
-            "frequency": "daily",
-            "priority": "high",
-            "tags": ["phishing", "brand-protection"]
+        "usaa-title": {
+            "query": "page.title:\"Member Account Login | USAA\"",
+            "description": "This report shows one subset of phishing sites that masquerade as USAA.",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "green",
+            "default_tlp_level": "clear",
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This is a report of phishing sites that masquerade as USAA."
+                },
+                {
+                    "tlp_level": "green",
+                    "text": "The query tracks the masqs by the page title. This is data that could be released to fellow analysts, but should be generally withheld from the bad guys."
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "This note has something that shouldn't be shared with the world. This note may contain info like an analyst's name or something."
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "clear",
+                    "url": "https://www.usaa.com/security"
+                },
+                {
+                    "tlp_level": "green",
+                    "url": "https://intranet.example.com/usaa-phishing-analysis"
+                },
+                {
+                    "tlp_level": "amber",
+                    "url": "https://intel.example.com/confidential/usaa-2025-report.pdf"
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "green",
+            "priority": "High",
+            "priority_tlp_level": "green",
+            "tags": [
+                "phishing",
+                "banking"
+            ],
+            "tags_tlp_level": "green",
+            "days": 7,
+            "last_run": "2025-04-20T23:59:54.633456"
         }
     }
 }
@@ -129,6 +178,8 @@ The configuration file is in JSON format with the following structure:
 - `report_username`: Your name or username to be displayed in generated reports.
 - `queries`: A map of named queries to execute against urlscan.io.
   - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
+  - `query_tlp_level`: TLP (Traffic Light Protocol) classification for the query itself. Determines how sensitive the search pattern is. Values: "clear", "green", "amber", "red".
+  - `default_tlp_level`: Default TLP classification for report content. Used for report elements without their own explicit TLP level. Values: "clear", "green", "amber", "red".
   - `reference`: Optional link to documentation or source for the query.
   - `notes`: Additional contextual information about the query.
   - `frequency`: Suggested frequency for running this query (e.g., "daily", "weekly").
@@ -174,6 +225,14 @@ output/
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
 
 ## Changelog
+
+### Version 0.3.0 (April 21, 2025)
+- Added TLP (Traffic Light Protocol) support for reports
+- Implemented `query_tlp_level` to determine sensitivity of the query itself
+- Added `default_tlp_level` to set classification for report content by default
+- Added TLP level in report filenames for easier identification
+- Report headers now display TLP classification with appropriate color coding
+- Added command-line flag `--tlp` to override default TLP level when generating reports
 
 ### Version 0.2.0 (April 20, 2025)
 - Fixed URL defanging to preserve filenames in their original form

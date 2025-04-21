@@ -1,48 +1,158 @@
 {
-    "api_key": "YOUR_URLSCAN_API_KEY_HERE",
+    "api_key": "your_urlscan_io_api_key",
     "output_directory": "output",
     "default_days": 7,
-    "report_username": "YOUR_NAME",
+    "report_username": "Your Name",
+    "default_tlp_level": "clear",
     "queries": {
         "usaa-domain": {
-            "description": "Monitoring for scan tasks that have 'usaa' in the domain",
             "query": "domain:*usaa*",
+            "description": "Monitoring for scan tasks that have 'usaa' in the domain",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "clear",
+            "default_tlp_level": "clear",
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This query captures domains containing 'usaa', which may indicate attempts to impersonate the financial institution"
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "clear",
+                    "url": "https://www.usaa.com/security"
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "clear",
+            "priority": "High",
+            "priority_tlp_level": "clear",
+            "tags": ["financial", "usaa", "domain-monitoring"],
+            "tags_tlp_level": "clear",
             "last_run": null,
-            "reference": "https://www.usaa.com/security",
-            "notes": "This query captures domains containing 'usaa', which may indicate attempts to impersonate the financial institution",
-            "frequency": "daily",
-            "priority": "high",
-            "tags": ["financial", "usaa", "domain-monitoring"]
+            "days": 7
         },
         "usaa-title": {
-            "description": "Monitoring for scan tasks that have 'Member Account Login | USAA' in the page title",
             "query": "page.title:\"Member Account Login | USAA\"",
-            "last_run": null,
-            "reference": "https://www.usaa.com/inet/wc/security-alert-phishing",
-            "notes": "This query finds pages with the exact USAA login page title, which is a common phishing tactic",
-            "frequency": "daily",
-            "priority": "high",
-            "tags": ["financial", "usaa", "login-page"]
+            "description": "This report shows one subset of phishing sites that masquerade as USAA.",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "green",
+            "default_tlp_level": "clear",
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This is a report of phishing sites that masquerade as USAA."
+                },
+                {
+                    "tlp_level": "green",
+                    "text": "The query tracks the masqs by the page title. This is data that could be released to fellow analysts, but should be generally withheld from the bad guys."
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "This note has something that shouldn't be shared with the world. This note may contain info like an analyst's name or something."
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "clear",
+                    "url": "https://www.usaa.com/security"
+                },
+                {
+                    "tlp_level": "green",
+                    "url": "https://intranet.example.com/usaa-phishing-analysis"
+                },
+                {
+                    "tlp_level": "amber",
+                    "url": "https://intel.example.com/confidential/usaa-2025-report.pdf"
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "green",
+            "priority": "High",
+            "priority_tlp_level": "green",
+            "tags": ["phishing", "banking"],
+            "tags_tlp_level": "green",
+            "days": 7
         },
         "usaa-favicon": {
-            "description": "Monitoring for scan tasks that use the official USAA favicon hash",
             "query": "hash:\"YOUR_USAA_FAVICON_HASH_HERE\"",
+            "description": "Monitoring for scan tasks that use the official USAA favicon hash",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "clear",
+            "default_tlp_level": "clear",
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This query detects sites using the USAA favicon hash, which is often an indicator of phishing attempts"
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "clear",
+                    "url": "https://www.usaa.com/favicon.ico"
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "clear",
+            "priority": "Medium",
+            "priority_tlp_level": "clear",
+            "tags": ["financial", "usaa", "favicon-matching"],
+            "tags_tlp_level": "clear",
             "last_run": null,
-            "reference": "https://www.usaa.com/favicon.ico",
-            "notes": "This query detects sites using the USAA favicon hash, which is often an indicator of phishing attempts",
-            "frequency": "daily",
-            "priority": "medium",
-            "tags": ["financial", "usaa", "favicon-matching"]
+            "days": 7
         },
         "chase-domain": {
-            "description": "Monitoring for scan tasks that have 'chase' in the domain",
             "query": "domain:*chase*",
+            "description": "Monitoring for scan tasks that have 'chase' in the domain",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "clear",
+            "default_tlp_level": "clear",
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This query identifies domains with 'chase' in the name, which may indicate attempts to impersonate Chase Bank"
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "clear",
+                    "url": "https://www.chase.com/digital/resources/privacy-security/security/report-fraud"
+                }
+            ],
+            "frequency": "Weekly",
+            "frequency_tlp_level": "clear",
+            "priority": "High",
+            "priority_tlp_level": "clear",
+            "tags": ["financial", "chase", "domain-monitoring"],
+            "tags_tlp_level": "clear",
             "last_run": null,
-            "reference": "https://www.chase.com/digital/resources/privacy-security/security/report-fraud",
-            "notes": "This query identifies domains with 'chase' in the name, which may indicate attempts to impersonate Chase Bank",
-            "frequency": "weekly",
-            "priority": "high",
-            "tags": ["financial", "chase", "domain-monitoring"]
+            "days": 7
+        },
+        "example-query": {
+            "query": "domain:example.com",
+            "description": "Example query for demonstration",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "clear",
+            "default_tlp_level": "clear",
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "Example query for demonstration purposes"
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "clear",
+                    "url": "https://example.com"
+                }
+            ],
+            "frequency": "Weekly",
+            "frequency_tlp_level": "clear",
+            "priority": "Medium",
+            "priority_tlp_level": "clear",
+            "tags": ["example"],
+            "tags_tlp_level": "clear",
+            "days": 7
         }
     }
 }

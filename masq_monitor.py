@@ -18,6 +18,7 @@ class MasqMonitor:
         self.config = self._load_config()
         self.output_dir = Path(self.config.get("output_directory", "output"))
         self.output_dir.mkdir(exist_ok=True)
+        self.tlp_levels = ["clear", "white", "green", "amber", "red"]
 
     def _load_config(self):
         """Load configuration from the config file."""
@@ -72,13 +73,15 @@ class MasqMonitor:
             
         return defanged_url
 
-    def run_query(self, query_name, days=None):
+    def run_query(self, query_name, days=None, tlp_level=None):
         """Run a specific query from the configuration.
         
         Args:
             query_name: Name of the query to run from config
             days: Optional. Number of days to limit the search to (from today)
                  If not provided, uses last_run timestamp or falls back to default_days
+            tlp_level: Optional. TLP level to apply to this report
+                      If not provided, uses query default or global default
         """
         if query_name not in self.config["queries"]:
             print(f"Query '{query_name}' not found in configuration.")
@@ -86,6 +89,10 @@ class MasqMonitor:
         
         query_config = self.config["queries"][query_name]
         api_key = self.config.get("api_key", "")
+        
+        # Determine the appropriate TLP level
+        report_tlp = self._determine_tlp_level(query_name, tlp_level)
+        print(f"Report TLP level: {report_tlp}")
         
         # Create the query string, adding date filter based on last_run or days parameter
         query_string = query_config["query"]
@@ -150,8 +157,8 @@ class MasqMonitor:
                 if "page" in result and "domain" in result["page"]:
                     result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
             
-            # Generate the HTML report
-            self._generate_html_report(results, query_name, run_dir)
+            # Generate the HTML report with the timestamp
+            self._generate_html_report(results, query_name, run_dir, report_tlp, timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             print(f"Report generated in {run_dir} with {len(results)} results")
         else:
             print(f"No results found for query '{query_name}'")
@@ -160,6 +167,67 @@ class MasqMonitor:
         current_time = datetime.datetime.now().isoformat()
         self.config["queries"][query_name]["last_run"] = current_time
         self._save_config()
+
+    def _determine_tlp_level(self, query_name, requested_tlp=None):
+        """Determine the appropriate TLP level for the report.
+        
+        Args:
+            query_name: Name of the query
+            requested_tlp: Optional TLP level requested by the user
+            
+        Returns:
+            The appropriate TLP level to use
+        """
+        # If user explicitly requested a TLP level, use that
+        if requested_tlp and requested_tlp in self.tlp_levels:
+            return requested_tlp
+            
+        # Otherwise check query default
+        query_config = self.config["queries"].get(query_name, {})
+        query_default = query_config.get("default_tlp_level")
+        if query_default and query_default in self.tlp_levels:
+            return query_default
+            
+        # Fall back to global default
+        global_default = self.config.get("default_tlp_level", "clear")
+        if global_default in self.tlp_levels:
+            return global_default
+            
+        # Ultimate fallback
+        return "clear"
+        
+    def _get_highest_tlp_level(self, query_name):
+        """Determine the highest TLP level in the query metadata.
+        
+        Args:
+            query_name: Name of the query
+            
+        Returns:
+            The highest TLP level found
+        """
+        query_config = self.config["queries"].get(query_name, {})
+        highest_level = "clear"
+        
+        # Check all metadata items for TLP levels
+        for key in query_config:
+            if isinstance(query_config[key], dict) and "tlp_level" in query_config[key]:
+                item_tlp = query_config[key]["tlp_level"]
+                if self.tlp_levels.index(item_tlp) > self.tlp_levels.index(highest_level):
+                    highest_level = item_tlp
+            elif key == "notes" and isinstance(query_config[key], list):
+                for note in query_config[key]:
+                    if isinstance(note, dict) and "tlp_level" in note:
+                        item_tlp = note["tlp_level"]
+                        if self.tlp_levels.index(item_tlp) > self.tlp_levels.index(highest_level):
+                            highest_level = item_tlp
+            elif key == "references" and isinstance(query_config[key], list):
+                for ref in query_config[key]:
+                    if isinstance(ref, dict) and "tlp_level" in ref:
+                        item_tlp = ref["tlp_level"]
+                        if self.tlp_levels.index(item_tlp) > self.tlp_levels.index(highest_level):
+                            highest_level = item_tlp
+                            
+        return highest_level
 
     def _execute_urlscan_query(self, query, api_key):
         """Execute a query against the urlscan.io API."""
@@ -201,7 +269,7 @@ class MasqMonitor:
             print(f"Error encoding image {image_path} to Base64: {e}")
             return None
 
-    def _generate_html_report(self, results, query_name, output_dir):
+    def _generate_html_report(self, results, query_name, output_dir, tlp_level="clear", timestamp=None):
         """Generate an HTML report from the results."""
         env = Environment(loader=FileSystemLoader("templates"))
         template = env.get_template("report_template.html")
@@ -209,15 +277,28 @@ class MasqMonitor:
         # Get query data including metadata
         query_data = self.config["queries"].get(query_name, {})
         
+        # Use the provided timestamp or generate current time
+        if timestamp is None:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         html_content = template.render(
             query_name=query_name,
             query_data=query_data,
-            timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            timestamp=timestamp,
             results=results,
-            username=self.config.get("report_username", "")
+            username=self.config.get("report_username", ""),
+            tlp_level=tlp_level
         )
         
-        with open(output_dir / "report.html", 'w', encoding='utf-8') as f:
+        # Extract the date/time group from the output directory
+        dir_name = output_dir.name
+        datetime_part = ""
+        if "_" in dir_name:
+            datetime_part = dir_name.split("_", 1)[1]
+        
+        # Include TLP level and datetime in the filename
+        report_filename = f"report_{query_name}_{datetime_part}_TLP-{tlp_level}.html"
+        with open(output_dir / report_filename, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
     def list_queries(self):
@@ -260,6 +341,8 @@ def main():
     parser.add_argument("--query", help="Run a specific query")
     parser.add_argument("--all", action="store_true", help="Run all queries")
     parser.add_argument("-d", "--days", type=int, help="Limit results to the specified number of days")
+    parser.add_argument("--tlp", choices=["clear", "white", "green", "amber", "red"], 
+                        help="Set the TLP level for the report")
     
     args = parser.parse_args()
     
@@ -271,10 +354,10 @@ def main():
     if args.list:
         monitor.list_queries()
     elif args.query:
-        monitor.run_query(args.query, days=days)
+        monitor.run_query(args.query, days=days, tlp_level=args.tlp)
     elif args.all:
         for query_name in monitor.config.get("queries", {}):
-            monitor.run_query(query_name, days=days)
+            monitor.run_query(query_name, days=days, tlp_level=args.tlp)
     else:
         parser.print_help()
 
