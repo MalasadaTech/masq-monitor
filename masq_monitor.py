@@ -322,6 +322,9 @@ class MasqMonitor:
             debug=debug
         )
         
+        # Remove blank lines from HTML content
+        html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
+        
         # Extract the date/time group from the output directory
         dir_name = output_dir.name
         datetime_part = ""
