@@ -21,6 +21,8 @@ class MasqMonitor:
         self.output_dir = Path(self.config.get("output_directory", "output"))
         self.output_dir.mkdir(exist_ok=True)
         self.tlp_levels = ["clear", "white", "green", "amber", "red"]
+        # Initialize combined results storage for query groups
+        self.group_results = {}
 
     def _load_config(self):
         """Load configuration from the config file."""
@@ -196,6 +198,249 @@ class MasqMonitor:
         self._save_config()
         
         return results
+
+    def run_query_group(self, group_name, days=None, tlp_level=None):
+        """Run a group of queries and generate a combined report.
+        
+        Args:
+            group_name: Name of the query group to run
+            days: Optional. Number of days to limit the search to
+            tlp_level: Optional. TLP level to apply to this report
+            
+        Returns:
+            Dictionary with results from each query in the group
+        """
+        if group_name not in self.config["queries"]:
+            print(f"Query group '{group_name}' not found in configuration.")
+            return {}
+            
+        group_config = self.config["queries"][group_name]
+        
+        # Verify this is actually a query group
+        if not group_config.get("type") == "query_group":
+            print(f"'{group_name}' is not a query group. Use run_query instead.")
+            return {}
+            
+        # Get the list of queries in this group
+        query_names = group_config.get("queries", [])
+        if not query_names:
+            print(f"Query group '{group_name}' does not contain any queries.")
+            return {}
+            
+        print(f"Running query group '{group_name}' with {len(query_names)} queries")
+        
+        # Initialize results dictionary
+        self.group_results[group_name] = {}
+        
+        # Run each query in the group
+        for query_name in query_names:
+            # Check if this is a nested query group
+            if query_name in self.config["queries"] and self.config["queries"][query_name].get("type") == "query_group":
+                print(f"Running nested query group '{query_name}'")
+                # Run the nested query group
+                nested_results = self.run_query_group(query_name, days=days, tlp_level=tlp_level)
+                self.group_results[group_name][query_name] = {
+                    "type": "query_group",
+                    "results": nested_results
+                }
+            else:
+                # Run individual query
+                print(f"Running query '{query_name}' as part of group '{group_name}'")
+                results = self.run_query(query_name, days=days, tlp_level=tlp_level)
+                self.group_results[group_name][query_name] = results
+                
+        # Generate a combined report after all queries have run
+        self._generate_group_report(group_name, tlp_level)
+        
+        # Update the last_run timestamp for the group
+        current_time = datetime.datetime.now().isoformat()
+        self.config["queries"][group_name]["last_run"] = current_time
+        self._save_config()
+        
+        return self.group_results[group_name]
+        
+    def _generate_group_report(self, group_name, tlp_level=None):
+        """Generate a combined HTML report for a query group.
+        
+        Args:
+            group_name: Name of the query group
+            tlp_level: Optional TLP level for the report
+        """
+        group_config = self.config["queries"][group_name]
+        group_results = self.group_results.get(group_name, {})
+        
+        if not group_results:
+            print(f"No results found for query group '{group_name}'")
+            return
+            
+        # Determine the appropriate TLP level
+        report_tlp = self._determine_tlp_level(group_name, tlp_level)
+        print(f"Group report TLP level: {report_tlp}")
+        
+        # Create a unique output directory for this group report
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_dir = self.output_dir / f"{group_name}_{timestamp}_group"
+        run_dir.mkdir(exist_ok=True)
+        
+        # Create images directory
+        img_dir = run_dir / "images"
+        img_dir.mkdir(exist_ok=True)
+        
+        # Check if group has a specific template path
+        template_path = group_config.get("template_path")
+        
+        # If no group-specific template, use the global default
+        if not template_path:
+            template_path = self.config.get("default_template_path", "templates/report_template.html")
+            
+        # Split template path into directory and filename
+        template_dir = os.path.dirname(template_path)
+        template_file = os.path.basename(template_path)
+        
+        # Create Jinja2 environment with the appropriate template directory
+        env = Environment(loader=FileSystemLoader(template_dir if template_dir else "templates"))
+        try:
+            template = env.get_template(template_file)
+        except Exception as e:
+            print(f"Error loading template {template_path}: {e}")
+            print("Falling back to default template")
+            env = Environment(loader=FileSystemLoader("templates"))
+            template = env.get_template("report_template.html")
+        
+        # Use the provided timestamp or generate current time
+        current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Copy all screenshots to the group report directory
+        # and create a flattened structure for all results to include in the report
+        flattened_results = []
+        query_sections = []
+        
+        for query_name, query_data in group_results.items():
+            if isinstance(query_data, dict) and query_data.get("type") == "query_group":
+                # Handle nested query groups
+                query_config = self.config["queries"][query_name]
+                query_sections.append({
+                    "name": query_name,
+                    "type": "query_group",
+                    "config": query_config,
+                    "results_count": self._count_total_results(query_data["results"])
+                })
+                # Recursively process nested group results
+                self._process_nested_group_results(query_data["results"], flattened_results, img_dir)
+            else:
+                # Handle individual query results
+                query_config = self.config["queries"][query_name]
+                results = query_data
+                
+                # Add this query's section info
+                query_sections.append({
+                    "name": query_name,
+                    "type": "query",
+                    "config": query_config,
+                    "results_count": len(results)
+                })
+                
+                # Process individual query results
+                for result in results:
+                    if "base64_screenshot" in result:
+                        # Copy screenshot to group report directory
+                        if "task" in result and "uuid" in result["task"]:
+                            uuid = result["task"]["uuid"]
+                            dest_path = img_dir / f"{uuid}.png"
+                            if "local_screenshot" in result:
+                                # Update paths for the group report
+                                orig_path = self.output_dir / result["local_screenshot"].replace("images/", "")
+                                if os.path.exists(orig_path):
+                                    with open(orig_path, "rb") as src_file:
+                                        with open(dest_path, "wb") as dest_file:
+                                            dest_file.write(src_file.read())
+                            result["local_screenshot"] = f"images/{uuid}.png"
+                    
+                    # Add query name to the result for section identification in the template
+                    result["source_query"] = query_name
+                    flattened_results.append(result)
+        
+        # Generate the HTML report
+        html_content = template.render(
+            query_name=group_name,
+            query_data=group_config,
+            timestamp=current_timestamp,
+            results=flattened_results,
+            is_group_report=True,
+            query_sections=query_sections,
+            username=self.config.get("report_username", ""),
+            tlp_level=report_tlp,
+            debug=False
+        )
+        
+        # Remove blank lines from HTML content
+        html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
+        
+        # Extract the date/time group from the output directory
+        dir_name = run_dir.name
+        datetime_part = ""
+        if "_" in dir_name:
+            datetime_part = dir_name.split("_", 1)[1]
+        
+        # Include TLP level and datetime in the filename
+        report_filename = f"report_{group_name}_{datetime_part}_TLP-{report_tlp}.html"
+        with open(run_dir / report_filename, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+            
+        print(f"Group report generated in {run_dir} with {len(flattened_results)} total results")
+        
+    def _process_nested_group_results(self, nested_results, flattened_results, img_dir):
+        """Process results from nested query groups.
+        
+        Args:
+            nested_results: Results from a nested query group
+            flattened_results: List to append flattened results to
+            img_dir: Directory to copy screenshots to
+        """
+        for query_name, query_data in nested_results.items():
+            if isinstance(query_data, dict) and query_data.get("type") == "query_group":
+                # Recursively process nested groups
+                self._process_nested_group_results(query_data["results"], flattened_results, img_dir)
+            else:
+                # Process individual query results
+                results = query_data
+                for result in results:
+                    if "base64_screenshot" in result:
+                        # Copy screenshot to group report directory
+                        if "task" in result and "uuid" in result["task"]:
+                            uuid = result["task"]["uuid"]
+                            dest_path = img_dir / f"{uuid}.png"
+                            if "local_screenshot" in result:
+                                # Update paths for the group report
+                                orig_path = self.output_dir / result["local_screenshot"].replace("images/", "")
+                                if os.path.exists(orig_path):
+                                    with open(orig_path, "rb") as src_file:
+                                        with open(dest_path, "wb") as dest_file:
+                                            dest_file.write(src_file.read())
+                            result["local_screenshot"] = f"images/{uuid}.png"
+                    
+                    # Add query name to the result for section identification in the template
+                    result["source_query"] = query_name
+                    flattened_results.append(result)
+                    
+    def _count_total_results(self, group_results):
+        """Count total number of results in a query group, including nested groups.
+        
+        Args:
+            group_results: Results dictionary from a query group
+            
+        Returns:
+            Total count of individual query results
+        """
+        count = 0
+        for query_name, query_data in group_results.items():
+            if isinstance(query_data, dict) and query_data.get("type") == "query_group":
+                # Recursively count nested group results
+                count += self._count_total_results(query_data["results"])
+            else:
+                # Count individual query results
+                count += len(query_data)
+        return count
 
     def _determine_tlp_level(self, query_name, requested_tlp=None):
         """Determine the appropriate TLP level for the report.
@@ -514,7 +759,9 @@ def main():
     parser.add_argument("--api-key-file", default="api_key.json", help="Path to API key file")
     parser.add_argument("--list", action="store_true", help="List available queries")
     parser.add_argument("--query", help="Run a specific query")
+    parser.add_argument("--query-group", help="Run a specific query group")
     parser.add_argument("--all", action="store_true", help="Run all queries")
+    parser.add_argument("--all-groups", action="store_true", help="Run all query groups")
     parser.add_argument("-d", "--days", type=int, help="Limit results to the specified number of days")
     parser.add_argument("--tlp", choices=["clear", "white", "green", "amber", "red"], 
                         help="Set the TLP level for the report")
@@ -543,10 +790,36 @@ def main():
         # Run query and optionally save the results
         results = monitor.run_query(args.query, days=days, tlp_level=args.tlp)
         if args.save_results and results:
-            monitor.save_urlscan_results(args.query, results)
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            monitor.save_urlscan_results(args.query, results, timestamp)
+    elif args.query_group:
+        # Run a query group
+        group_results = monitor.run_query_group(args.query_group, days=days, tlp_level=args.tlp)
+        # Save results from each query if requested
+        if args.save_results and group_results:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            for query_name, query_results in group_results.items():
+                if isinstance(query_results, list) and query_results:  # Only save actual query results, not nested groups
+                    monitor.save_urlscan_results(query_name, query_results, timestamp)
     elif args.all:
-        for query_name in monitor.config.get("queries", {}):
-            monitor.run_query(query_name, days=days, tlp_level=args.tlp)
+        # Run all individual queries (not query groups)
+        for query_name, query_data in monitor.config.get("queries", {}).items():
+            if query_data.get("type") != "query_group":
+                results = monitor.run_query(query_name, days=days, tlp_level=args.tlp)
+                if args.save_results and results:
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    monitor.save_urlscan_results(query_name, results, timestamp)
+    elif args.all_groups:
+        # Run all query groups
+        for query_name, query_data in monitor.config.get("queries", {}).items():
+            if query_data.get("type") == "query_group":
+                group_results = monitor.run_query_group(query_name, days=days, tlp_level=args.tlp)
+                # Save results from each query if requested
+                if args.save_results and group_results:
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    for sub_query_name, query_results in group_results.items():
+                        if isinstance(query_results, list) and query_results:  # Only save actual query results, not nested groups
+                            monitor.save_urlscan_results(sub_query_name, query_results, timestamp)
     else:
         parser.print_help()
 

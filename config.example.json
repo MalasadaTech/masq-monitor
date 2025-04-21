@@ -1,58 +1,88 @@
 {
     "output_directory": "output",
     "default_days": 7,
-    "report_username": "Your Name",
-    "default_tlp_level": "clear",
-    "default_template_path": "templates/report_template.html",
+    "report_username": "MalasadaTech",
     "queries": {
         "usaa-domain": {
-            "query": "domain:*usaa*",
             "description": "Monitoring for scan tasks that have 'usaa' in the domain",
+            "query": "domain:*usaa*",
+            "last_run": "2025-04-19T16:11:24.424384",
+            "reference": "https://www.usaa.com/security",
+            "notes": "This query captures domains containing 'usaa', which may indicate attempts to impersonate the financial institution",
+            "frequency": "daily",
+            "priority": "high",
+            "tags": [
+                "financial",
+                "usaa",
+                "domain-monitoring"
+            ]
+        },
+        "aafes-logo": {
+            "query": "hash:32be958b45dfdfadd1c4184b8f75f04d8cdef0dea772a8f4f3b9a59cc9d9fc5f AND NOT task.domain:(www.shopmyexchange.com OR shopmyexchange.com)",
+            "description": "This shows one subset of phishing sites that masquerade as AAFES.",
             "description_tlp_level": "clear",
-            "query_tlp_level": "clear",
+            "query_tlp_level": "red",
             "default_tlp_level": "clear",
             "titles": [
                 {
-                    "title": "SUSPICIOUS DOMAINS CONTAINING USAA",
+                    "title": "PHISHING SITES MASQUERADING AS AAFES",
                     "tlp_level": "clear"
                 },
                 {
-                    "title": "USAA DOMAIN SQUATTING CAMPAIGN DETECTION",
+                    "title": "PHISHING SITES MASQUERADING AS AAFES - by page AAFES logo",
                     "tlp_level": "green"
                 },
                 {
-                    "title": "USAA DOMAIN MONITORING - INTERNAL INCIDENT #20250420-112",
+                    "title": "PHISHING SITES MASQUERADING AS AAFES - by page AAFES logo - (Internal tracking number or something really kewl that you should share with your friend MalasadaTech!)",
                     "tlp_level": "red"
                 }
             ],
             "notes": [
                 {
                     "tlp_level": "clear",
-                    "text": "This query captures domains containing 'usaa', which may indicate attempts to impersonate the financial institution"
+                    "text": "This is a report of phishing sites that masquerade as AAFES."
+                },
+                {
+                    "tlp_level": "green",
+                    "text": "The query tracks the masqs by the AAFES logo hash."
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "P0401.003 - HTTP: Shared Resources (32be958b45dfdfadd1c4184b8f75f04d8cdef0dea772a8f4f3b9a59cc9d9fc5f)"
                 }
             ],
             "references": [
                 {
-                    "tlp_level": "clear",
-                    "url": "https://www.usaa.com/security"
+                    "tlp_level": "green",
+                    "url": "https://malasada.tech/aafes-phishing-sites-observed/"
+                },
+                {
+                    "tlp_level": "green",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework"
+                },
+                {
+                    "tlp_level": "red",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework/blob/main/pivots/P0401.003.md"
                 }
             ],
             "frequency": "Daily",
-            "frequency_tlp_level": "clear",
+            "frequency_tlp_level": "green",
             "priority": "High",
-            "priority_tlp_level": "clear",
-            "tags": ["financial", "usaa", "domain-monitoring"],
-            "tags_tlp_level": "clear",
-            "last_run": null,
-            "days": 7
+            "priority_tlp_level": "green",
+            "tags": [
+                "phishing",
+                "aafes"
+            ],
+            "tags_tlp_level": "green",
+            "days": 7,
+            "last_run": "2025-04-20T19:26:36.523376"
         },
         "usaa-title": {
-            "query": "page.title:\"Member Account Login | USAA\"",
+            "query": "page.title:\"Member Account Login | USAA\" AND NOT task.domain:*.usaa.com AND NOT page.domain:*.usaa.com",
             "description": "This report shows one subset of phishing sites that masquerade as USAA.",
             "description_tlp_level": "clear",
-            "query_tlp_level": "green",
+            "query_tlp_level": "red",
             "default_tlp_level": "clear",
-            "template_path": "templates/report_template.html",
             "titles": [
                 {
                     "title": "PHISHING SITES MASQUERADING AS USAA",
@@ -70,160 +100,271 @@
             "notes": [
                 {
                     "tlp_level": "clear",
-                    "text": "This is a report of phishing sites that masquerade as USAA."
+                    "text": "This shows phishing sites that masquerade as USAA."
                 },
                 {
                     "tlp_level": "green",
-                    "text": "The query tracks the masqs by the page title. This is data that could be released to fellow analysts, but should be generally withheld from the bad guys."
+                    "text": "The query tracks the masqs by the page title."
                 },
                 {
                     "tlp_level": "red",
-                    "text": "This note has something that shouldn't be shared with the world. This note may contain info like an analyst's name or something."
+                    "text": "P0401.001 - HTTP: Title (\"Member Account Login | USAA\")"
                 }
             ],
             "references": [
                 {
-                    "tlp_level": "clear",
-                    "url": "https://www.usaa.com/security"
+                    "tlp_level": "green",
+                    "url": "https://malasada.tech/usaa-masquerades-found/"
                 },
                 {
                     "tlp_level": "green",
-                    "url": "https://intranet.example.com/usaa-phishing-analysis"
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework"
                 },
                 {
-                    "tlp_level": "amber",
-                    "url": "https://intel.example.com/confidential/usaa-2025-report.pdf"
+                    "tlp_level": "red",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework/blob/main/pivots/P0401.001.md"
                 }
             ],
             "frequency": "Daily",
             "frequency_tlp_level": "green",
             "priority": "High",
             "priority_tlp_level": "green",
-            "tags": ["phishing", "banking"],
+            "tags": [
+                "phishing",
+                "banking"
+            ],
             "tags_tlp_level": "green",
-            "days": 7
+            "days": 7,
+            "last_run": "2025-04-20T19:26:40.715093"
         },
-        "usaa-favicon": {
-            "query": "hash:\"YOUR_USAA_FAVICON_HASH_HERE\"",
-            "description": "Monitoring for scan tasks that use the official USAA favicon hash",
+        "nfcu-ip-title": {
+            "query": "page.ip:(\"151.101.66.59\" OR \"2a04:4e42:600::571\" OR \"2a04:4e42:400::571\") AND page.title:Navy",
+            "description": "This report shows one subset of phishing sites that masquerade as NFCU.",
             "description_tlp_level": "clear",
-            "query_tlp_level": "clear",
+            "query_tlp_level": "red",
             "default_tlp_level": "clear",
             "titles": [
                 {
-                    "title": "SITES USING USAA BRANDING ELEMENTS",
+                    "title": "PHISHING SITES MASQUERADING AS NFCU",
                     "tlp_level": "clear"
                 },
                 {
-                    "title": "USAA FAVICON MATCH DETECTION - PHISHING CAMPAIGN",
+                    "title": "PHISHING SITES MASQUERADING AS NFCU - by IP and page title",
                     "tlp_level": "green"
                 },
                 {
-                    "title": "USAA FAVICON HASH MONITORING - THREAT ACTOR GROUP TA551",
-                    "tlp_level": "amber"
-                }
-            ],
-            "notes": [
-                {
-                    "tlp_level": "clear",
-                    "text": "This query detects sites using the USAA favicon hash, which is often an indicator of phishing attempts"
-                }
-            ],
-            "references": [
-                {
-                    "tlp_level": "clear",
-                    "url": "https://www.usaa.com/favicon.ico"
-                }
-            ],
-            "frequency": "Daily",
-            "frequency_tlp_level": "clear",
-            "priority": "Medium",
-            "priority_tlp_level": "clear",
-            "tags": ["financial", "usaa", "favicon-matching"],
-            "tags_tlp_level": "clear",
-            "last_run": null,
-            "days": 7
-        },
-        "chase-domain": {
-            "query": "domain:*chase*",
-            "description": "Monitoring for scan tasks that have 'chase' in the domain",
-            "description_tlp_level": "clear",
-            "query_tlp_level": "clear",
-            "default_tlp_level": "clear",
-            "titles": [
-                {
-                    "title": "CHASE BANK DOMAIN IMPERSONATION REPORT",
-                    "tlp_level": "clear"
-                },
-                {
-                    "title": "CHASE BANK DOMAIN SQUATTING - TARGETED CAMPAIGN",
-                    "tlp_level": "green"
-                },
-                {
-                    "title": "CHASE BANK TARGETED PHISHING CAMPAIGN - OPERATION GHOSTCLICK",
-                    "tlp_level": "amber"
-                },
-                {
-                    "title": "CHASE BANK DOMAINS - APT29 INFRASTRUCTURE MAP #JP-2025-04",
+                    "title": "PHISHING SITES MASQUERADING AS NFCU - by IP and page title - (Internal tracking number or something really kewl that you should share with your friend MalasadaTech!)",
                     "tlp_level": "red"
                 }
             ],
             "notes": [
                 {
                     "tlp_level": "clear",
-                    "text": "This query identifies domains with 'chase' in the name, which may indicate attempts to impersonate Chase Bank"
+                    "text": "This shows phishing sites that masquerade as NFCU."
+                },
+                {
+                    "tlp_level": "green",
+                    "text": "The query tracks the masqs by the known-malicious ip and page title."
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "P0201 - Reverse lookup (151.101.66.59)"
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "P0201 - Reverse lookup (2a04:4e42:600::571)"
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "P0401.001 - HTTP: Title (\"Navy\")"
                 }
             ],
             "references": [
                 {
-                    "tlp_level": "clear",
-                    "url": "https://www.chase.com/digital/resources/privacy-security/security/report-fraud"
+                    "tlp_level": "green",
+                    "url": "https://malasada.tech/navy-federal-credit-union-masquerades-found/"
+                },
+                {
+                    "tlp_level": "green",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework"
+                },
+                {
+                    "tlp_level": "red",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework/blob/main/pivots/P0201.md"
+                },
+                {
+                    "tlp_level": "red",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework/blob/main/pivots/P0401.001.md"
                 }
             ],
-            "frequency": "Weekly",
+            "frequency": "Daily",
+            "frequency_tlp_level": "green",
+            "priority": "High",
+            "priority_tlp_level": "green",
+            "tags": [
+                "phishing",
+                "banking",
+                "nfcu"
+            ],
+            "tags_tlp_level": "green",
+            "days": 7,
+            "last_run": "2025-04-20T19:27:40.796610"
+        },
+        "usaa-favicon": {
+            "description": "Monitoring for scan tasks that use the official USAA favicon hash",
+            "query": "hash:\"YOUR_USAA_FAVICON_HASH_HERE\"",
+            "last_run": null,
+            "reference": "https://www.usaa.com/favicon.ico",
+            "notes": "This query detects sites using the USAA favicon hash, which is often an indicator of phishing attempts",
+            "frequency": "daily",
+            "priority": "medium",
+            "tags": [
+                "financial",
+                "usaa",
+                "favicon-matching"
+            ]
+        },
+        "usaa-monitoring": {
+            "type": "query_group",
+            "description": "Comprehensive monitoring for USAA masquerades using multiple detection methods",
+            "description_tlp_level": "clear",
+            "default_tlp_level": "green",
+            "queries": [
+                "usaa-domain",
+                "usaa-title",
+                "usaa-favicon"
+            ],
+            "titles": [
+                {
+                    "title": "USAA MASQUERADE MONITORING - COMBINED REPORT",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "USAA MASQUERADE MONITORING - COMPREHENSIVE DETECTION",
+                    "tlp_level": "amber"
+                }
+            ],
+            "notes": [
+                {
+                    "tlp_level": "green",
+                    "text": "This group combines multiple detection methods for a comprehensive view of USAA masquerade attempts."
+                },
+                {
+                    "tlp_level": "amber",
+                    "text": "The combined approach detects phishing sites through domain patterns, page titles, and favicon hashes."
+                }
+            ],
+            "frequency": "Daily",
             "frequency_tlp_level": "clear",
             "priority": "High",
             "priority_tlp_level": "clear",
-            "tags": ["financial", "chase", "domain-monitoring"],
+            "tags": [
+                "financial",
+                "usaa",
+                "combined-monitoring"
+            ],
             "tags_tlp_level": "clear",
-            "last_run": null,
-            "days": 7
+            "last_run": null
         },
-        "example-query": {
-            "query": "domain:example.com",
-            "description": "Example query for demonstration",
+        "military-themed-monitoring": {
+            "type": "query_group",
+            "description": "Comprehensive monitoring for veteran-themed masquerades using multiple detection methods",
             "description_tlp_level": "clear",
-            "query_tlp_level": "clear",
-            "default_tlp_level": "clear",
+            "default_tlp_level": "green",
+            "queries": [
+                "aafes-logo",
+                "usaa-title",
+                "nfcu-ip-title"
+            ],
             "titles": [
                 {
-                    "title": "EXAMPLE.COM DOMAIN MONITORING",
+                    "title": "VETERAN-THEMED MASQUERADE MONITORING - COMBINED REPORT",
+                    "tlp_level": "green"
+                },
+                {
+                    "title": "VETERAN-THEMED MASQUERADE MONITORING - COMPREHENSIVE DETECTION",
+                    "tlp_level": "amber"
+                }
+            ],
+            "notes": [
+                {
+                    "tlp_level": "green",
+                    "text": "This group combines multiple detection methods for a comprehensive view of VETERAN-THEMED masquerade attempts."
+                },
+                {
+                    "tlp_level": "amber",
+                    "text": "The combined approach detects phishing sites through page titles, and logo hashes."
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "clear",
+            "priority": "High",
+            "priority_tlp_level": "clear",
+            "tags": [
+                "financial",
+                "usaa",
+                "nfcu",
+                "aafes",
+                "combined-monitoring",
+                "military-themed"
+            ],
+            "tags_tlp_level": "clear",
+            "last_run": "2025-04-20T19:27:40.866836"
+        },
+        "banking-group": {
+            "type": "query_group",
+            "description": "Monitoring for banking-related masquerades including USAA and Chase",
+            "description_tlp_level": "clear",
+            "default_tlp_level": "green",
+            "queries": [
+                "usaa-monitoring",
+                "chase-domain"
+            ],
+            "titles": [
+                {
+                    "title": "FINANCIAL INSTITUTIONS MASQUERADE MONITORING",
                     "tlp_level": "clear"
                 },
                 {
-                    "title": "EXAMPLE.COM DOMAIN ANALYSIS - POTENTIAL SECURITY EVENT",
+                    "title": "BANKING PHISHING CAMPAIGN COMPREHENSIVE REPORT",
                     "tlp_level": "green"
                 }
             ],
             "notes": [
                 {
                     "tlp_level": "clear",
-                    "text": "Example query for demonstration purposes"
-                }
-            ],
-            "references": [
+                    "text": "This is a comprehensive monitoring group for financial institutions masquerades."
+                },
                 {
-                    "tlp_level": "clear",
-                    "url": "https://example.com"
+                    "tlp_level": "green",
+                    "text": "The group combines USAA monitoring (which includes domain, title, and favicon detection) with Chase domain monitoring."
                 }
             ],
             "frequency": "Weekly",
             "frequency_tlp_level": "clear",
-            "priority": "Medium",
+            "priority": "High",
             "priority_tlp_level": "clear",
-            "tags": ["example"],
+            "tags": [
+                "financial",
+                "banking",
+                "comprehensive-monitoring"
+            ],
             "tags_tlp_level": "clear",
-            "days": 7
+            "last_run": null
+        },
+        "chase-domain": {
+            "description": "Monitoring for scan tasks that have 'chase' in the domain",
+            "query": "domain:*chase*",
+            "last_run": null,
+            "reference": "https://www.chase.com/digital/resources/privacy-security/security/report-fraud",
+            "notes": "This query identifies domains with 'chase' in the name, which may indicate attempts to impersonate Chase Bank",
+            "frequency": "weekly",
+            "priority": "high",
+            "tags": [
+                "financial",
+                "chase",
+                "domain-monitoring"
+            ]
         }
     }
 }
