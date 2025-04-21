@@ -790,20 +790,36 @@ def main():
         # Run query and optionally save the results
         results = monitor.run_query(args.query, days=days, tlp_level=args.tlp)
         if args.save_results and results:
-            monitor.save_urlscan_results(args.query, results)
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            monitor.save_urlscan_results(args.query, results, timestamp)
     elif args.query_group:
         # Run a query group
-        monitor.run_query_group(args.query_group, days=days, tlp_level=args.tlp)
+        group_results = monitor.run_query_group(args.query_group, days=days, tlp_level=args.tlp)
+        # Save results from each query if requested
+        if args.save_results and group_results:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            for query_name, query_results in group_results.items():
+                if isinstance(query_results, list) and query_results:  # Only save actual query results, not nested groups
+                    monitor.save_urlscan_results(query_name, query_results, timestamp)
     elif args.all:
         # Run all individual queries (not query groups)
         for query_name, query_data in monitor.config.get("queries", {}).items():
             if query_data.get("type") != "query_group":
-                monitor.run_query(query_name, days=days, tlp_level=args.tlp)
+                results = monitor.run_query(query_name, days=days, tlp_level=args.tlp)
+                if args.save_results and results:
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    monitor.save_urlscan_results(query_name, results, timestamp)
     elif args.all_groups:
         # Run all query groups
         for query_name, query_data in monitor.config.get("queries", {}).items():
             if query_data.get("type") == "query_group":
-                monitor.run_query_group(query_name, days=days, tlp_level=args.tlp)
+                group_results = monitor.run_query_group(query_name, days=days, tlp_level=args.tlp)
+                # Save results from each query if requested
+                if args.save_results and group_results:
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    for sub_query_name, query_results in group_results.items():
+                        if isinstance(query_results, list) and query_results:  # Only save actual query results, not nested groups
+                            monitor.save_urlscan_results(sub_query_name, query_results, timestamp)
     else:
         parser.print_help()
 
