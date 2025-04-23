@@ -17,6 +17,66 @@
                 "domain-monitoring"
             ]
         },
+        "avg-nl-title": {
+            "query": "page.title:\" AVG 2024 | GRATIS Antivirus, VPN, TuneUp voor alle apparaten \" AND NOT page.domain:www.avg.com",
+            "description": "This shows one subset of malicious sites that masquerade as AVG to deliver AnyDesk RMM.",
+            "description_tlp_level": "clear",
+            "query_tlp_level": "red",
+            "default_tlp_level": "clear",
+            "titles": [
+                {
+                    "title": "MALICIOUS SITES MASQUERADING AS AVG",
+                    "tlp_level": "clear"
+                },
+                {
+                    "title": "MALICIOUS SITES MASQUERADING AS AVG - by AVG page title",
+                    "tlp_level": "green"
+                }
+            ],
+            "notes": [
+                {
+                    "tlp_level": "clear",
+                    "text": "This is a report of sites that masquerade as AVG."
+                },
+                {
+                    "tlp_level": "green",
+                    "text": "The query tracks the masqs by the AVG NL page title."
+                },
+                {
+                    "tlp_level": "red",
+                    "text": "P0401.001 - HTTP: Title (AVG 2024 | GRATIS Antivirus, VPN, TuneUp voor alle apparaten)"
+                }
+            ],
+            "references": [
+                {
+                    "tlp_level": "green",
+                    "url": "https://x.com/DaveLikesMalwre/status/1910314422330868216"
+                },
+                {
+                    "tlp_level": "green",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework"
+                },
+                {
+                    "tlp_level": "red",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework/blob/main/pivots/P0401.001.md"
+                },
+                {
+                    "tlp_level": "red",
+                    "url": "https://github.com/MalasadaTech/defenders-threatmesh-framework/blob/main/examples/EX0015.md"
+                }
+            ],
+            "frequency": "Daily",
+            "frequency_tlp_level": "green",
+            "priority": "High",
+            "priority_tlp_level": "green",
+            "tags": [
+                "malicious",
+                "avg"
+            ],
+            "tags_tlp_level": "green",
+            "days": 7,
+            "last_run": "null"
+        },
         "aafes-logo": {
             "query": "hash:32be958b45dfdfadd1c4184b8f75f04d8cdef0dea772a8f4f3b9a59cc9d9fc5f AND NOT task.domain:(www.shopmyexchange.com OR shopmyexchange.com)",
             "description": "This shows one subset of phishing sites that masquerade as AAFES.",
