@@ -350,6 +350,12 @@ The HTML reports are self-contained files with all screenshots embedded as Base6
 
 ## Changelog
 
+### Version 0.4.1 (April 24, 2025)
+- Fixed error when listing queries with query groups by safely accessing query attributes
+- Enhanced the query listing display to show query types (Query vs Query Group)
+- Improved display of query groups to show member queries instead of query strings
+- Better formatting for `--list` command output with consistent structure
+
 ### Version 0.4.0 (April 20, 2025)
 - Added support for query groups to organize related queries
 - Implemented hierarchical query structure with nested query groups

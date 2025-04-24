@@ -660,9 +660,26 @@ class MasqMonitor:
             priority = details.get('priority', 'Not specified')
             tags = ", ".join(details.get('tags', [])) or "None"
             
+            # Determine if this is a query or query group
+            is_query_group = details.get('type') == 'query_group'
+            query_type = "Query Group" if is_query_group else "Query"
+            
             print(f"\n{name}:")
+            print(f"  Type: {query_type}")
             print(f"  Description: {description}")
-            print(f"  Query: {details['query']}")
+            
+            if is_query_group:
+                # For query groups, display the list of queries
+                queries_list = details.get('queries', [])
+                if queries_list:
+                    print(f"  Queries: {', '.join(queries_list)}")
+                else:
+                    print("  Queries: None")
+            else:
+                # For regular queries, display the query string
+                query_string = details.get('query', 'No query string defined')
+                print(f"  Query: {query_string}")
+            
             print(f"  Suggested Frequency: {frequency}")
             print(f"  Priority: {priority}")
             print(f"  Tags: {tags}")
