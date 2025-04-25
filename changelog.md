@@ -1,6 +1,10 @@
 # Changelog
 
 ## April 24, 2025
+- Refactored urlscan-specific code into separate client modules (`urlscan_client.py` and `silentpush_client.py`) to prepare for Silent Push API implementation
+- Improved code organization with platform-specific client classes
+- Modified masq_monitor.py to use the appropriate client based on the "platform" field
+- Added placeholder implementation for Silent Push API client
 - Added "platform" property to query objects to support multiple search platforms
 - Added support for specifying "urlscan" or "silentpush" as the query platform
 - Modified code to handle platform-specific query execution
