@@ -1,6 +1,12 @@
 # Changelog
 
 ## April 24, 2025
+- Refactored `save_urlscan_results` into platform-independent `save_results` function
+- Added platform-independent `load_results` function to work with any API platform
+- Maintained backward compatibility with legacy `save_urlscan_results` and `load_urlscan_results` methods
+- Updated main function to use the new platform-agnostic saving/loading methods with `--save-results` and `--cached-results` flags
+- Refactored `test_report_generation` to use platform-independent functions
+- Improved error handling for cached results
 - Refactored urlscan-specific code into separate client modules (`urlscan_client.py` and `silentpush_client.py`) to prepare for Silent Push API implementation
 - Improved code organization with platform-specific client classes
 - Modified masq_monitor.py to use the appropriate client based on the "platform" field
