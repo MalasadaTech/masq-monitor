@@ -1,6 +1,10 @@
 # Changelog
 
 ## April 24, 2025
+- Added "platform" property to query objects to support multiple search platforms
+- Added support for specifying "urlscan" or "silentpush" as the query platform
+- Modified code to handle platform-specific query execution
+- Updated example configuration with platform property for all queries
 - Migrated API key storage from JSON to .env file for improved security
 - Added python-dotenv integration for loading environment variables
 - Removed all references to api_key.json while maintaining backward compatibility

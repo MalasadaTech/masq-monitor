@@ -6,6 +6,7 @@
         "usaa-domain": {
             "description": "Monitoring for scan tasks that have 'usaa' in the domain",
             "query": "domain:*usaa*",
+            "platform": "urlscan",
             "last_run": "2025-04-19T16:11:24.424384",
             "reference": "https://www.usaa.com/security",
             "notes": "This query captures domains containing 'usaa', which may indicate attempts to impersonate the financial institution",
@@ -19,6 +20,7 @@
         },
         "avg-nl-title": {
             "query": "page.title:\" AVG 2024 | GRATIS Antivirus, VPN, TuneUp voor alle apparaten \" AND NOT page.domain:www.avg.com",
+            "platform": "urlscan",
             "description": "This shows one subset of malicious sites that masquerade as AVG to deliver AnyDesk RMM.",
             "description_tlp_level": "clear",
             "query_tlp_level": "red",
@@ -79,6 +81,7 @@
         },
         "aafes-logo": {
             "query": "hash:32be958b45dfdfadd1c4184b8f75f04d8cdef0dea772a8f4f3b9a59cc9d9fc5f AND NOT task.domain:(www.shopmyexchange.com OR shopmyexchange.com)",
+            "platform": "urlscan",
             "description": "This shows one subset of phishing sites that masquerade as AAFES.",
             "description_tlp_level": "clear",
             "query_tlp_level": "red",
@@ -139,6 +142,7 @@
         },
         "usaa-title": {
             "query": "page.title:\"Member Account Login | USAA\" AND NOT task.domain:*.usaa.com AND NOT page.domain:*.usaa.com",
+            "platform": "urlscan",
             "description": "This report shows one subset of phishing sites that masquerade as USAA.",
             "description_tlp_level": "clear",
             "query_tlp_level": "red",
@@ -199,6 +203,7 @@
         },
         "nfcu-ip-title": {
             "query": "page.ip:(\"151.101.66.59\" OR \"2a04:4e42:600::571\" OR \"2a04:4e42:400::571\") AND page.title:Navy",
+            "platform": "urlscan",
             "description": "This report shows one subset of phishing sites that masquerade as NFCU.",
             "description_tlp_level": "clear",
             "query_tlp_level": "red",
@@ -273,6 +278,7 @@
         "usaa-favicon": {
             "description": "Monitoring for scan tasks that use the official USAA favicon hash",
             "query": "hash:\"YOUR_USAA_FAVICON_HASH_HERE\"",
+            "platform": "urlscan",
             "last_run": null,
             "reference": "https://www.usaa.com/favicon.ico",
             "notes": "This query detects sites using the USAA favicon hash, which is often an indicator of phishing attempts",
@@ -415,6 +421,7 @@
         "chase-domain": {
             "description": "Monitoring for scan tasks that have 'chase' in the domain",
             "query": "domain:*chase*",
+            "platform": "silentpush",
             "last_run": null,
             "reference": "https://www.chase.com/digital/resources/privacy-security/security/report-fraud",
             "notes": "This query identifies domains with 'chase' in the name, which may indicate attempts to impersonate Chase Bank",
