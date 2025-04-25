@@ -15,6 +15,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 
 - Queries search platforms for potential masquerade websites (BYO-Queries)
 - Multiple platform support (urlscan.io, with Silent Push API coming soon)
+- Modular architecture with platform-specific client modules
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports

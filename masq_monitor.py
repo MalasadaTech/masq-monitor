@@ -12,6 +12,8 @@ from jinja2 import Environment, FileSystemLoader
 import re
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+from urlscan_client import UrlscanClient
+from silentpush_client import SilentPushClient
 
 class MasqMonitor:
     def __init__(self, config_path="config.json"):
@@ -20,6 +22,12 @@ class MasqMonitor:
         load_dotenv()
         self.config = self._load_config()
         self.urlscan_api_key = self._load_api_key()
+        
+        # Initialize API clients
+        self.urlscan_client = UrlscanClient(api_key=self.urlscan_api_key)
+        # NOTE: Silent Push API key handling will need to be implemented in the future
+        self.silentpush_client = SilentPushClient(api_key=None)
+        
         self.output_dir = Path(self.config.get("output_directory", "output"))
         self.output_dir.mkdir(exist_ok=True)
         self.tlp_levels = ["clear", "white", "green", "amber", "red"]
@@ -173,23 +181,25 @@ class MasqMonitor:
         img_dir = run_dir / "images"
         img_dir.mkdir(exist_ok=True)
         
-        # Execute the query based on the platform
+        # Select the appropriate client based on platform
+        client = None
         if platform == "silentpush":
-            # Placeholder for SilentPush API integration
-            print(f"SilentPush API integration not yet implemented. Query: {query_string}")
-            results = []
+            client = self.silentpush_client
         else:  # Default to urlscan
-            # Execute the query using urlscan.io
-            results = self._execute_urlscan_query(query_string)
+            client = self.urlscan_client
+        
+        # Execute the query using the selected client
+        results = client.execute_query(query_string)
         
         if results:
             # Download thumbnails for each result
             for i, result in enumerate(results):
                 if "task" in result and "uuid" in result["task"]:
                     uuid = result["task"]["uuid"]
-                    self._download_screenshot(uuid, img_dir / f"{uuid}.png")
+                    screenshot_path = img_dir / f"{uuid}.png"
+                    client.download_screenshot(uuid, screenshot_path)
                     result["local_screenshot"] = f"images/{uuid}.png"
-                    result["base64_screenshot"] = self._encode_image_to_base64(img_dir / f"{uuid}.png")
+                    result["base64_screenshot"] = client.encode_image_to_base64(screenshot_path)
                 
                 # Defang all URLs and domains in the result
                 if "page" in result and "url" in result["page"]:
@@ -513,48 +523,6 @@ class MasqMonitor:
                             highest_level = item_tlp
                             
         return highest_level
-
-    def _execute_urlscan_query(self, query, api_key=None):
-        """Execute a query against the urlscan.io API."""
-        # Use the class-level API key by default
-        headers = {"API-Key": self.urlscan_api_key} if self.urlscan_api_key else {}
-        
-        url = f"https://urlscan.io/api/v1/search/?q={query}"
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            return data.get("results", [])
-        except requests.RequestException as e:
-            print(f"Error executing query: {e}")
-            return []
-
-    def _download_screenshot(self, uuid, output_path, api_key=None):
-        """Download the screenshot for a specific scan."""
-        # Use the class-level API key by default
-        headers = {"API-Key": self.urlscan_api_key} if self.urlscan_api_key else {}
-        
-        url = f"https://urlscan.io/screenshots/{uuid}.png"
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            
-            with open(output_path, 'wb') as f:
-                f.write(response.content)
-                
-            return True
-        except requests.RequestException as e:
-            print(f"Error downloading screenshot for {uuid}: {e}")
-            return False
-
-    def _encode_image_to_base64(self, image_path):
-        """Encode an image file to Base64."""
-        try:
-            with open(image_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode("utf-8")
-        except Exception as e:
-            print(f"Error encoding image {image_path} to Base64: {e}")
-            return None
 
     def _generate_html_report(self, results, query_name, output_dir, tlp_level="clear", timestamp=None, debug=False):
         """Generate an HTML report from the results."""
