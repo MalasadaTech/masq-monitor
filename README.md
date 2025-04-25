@@ -27,6 +27,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Tracks the last run timestamp for each query
 - Supports custom lookback periods for searches
 - Defangs IOCs (URLs and domains) in reports for safer sharing
+- Platform-independent saving and loading of results for testing and development
 - Customizable report username
 - Branded footer with project links
 - API keys stored in .env file for better security
