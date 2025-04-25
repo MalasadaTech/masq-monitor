@@ -120,6 +120,14 @@ class MasqMonitor:
         report_tlp = self._determine_tlp_level(query_name, tlp_level)
         print(f"Report TLP level: {report_tlp}")
         
+        # Check the platform for this query
+        platform = query_config.get("platform", "urlscan")
+        if platform not in ["urlscan", "silentpush"]:
+            print(f"Warning: Invalid platform '{platform}' for query '{query_name}'. Defaulting to 'urlscan'.")
+            platform = "urlscan"
+        
+        print(f"Using platform: {platform}")
+        
         # Create the query string, adding date filter based on last_run or days parameter
         query_string = query_config["query"]
         
@@ -165,8 +173,14 @@ class MasqMonitor:
         img_dir = run_dir / "images"
         img_dir.mkdir(exist_ok=True)
         
-        # Execute the query
-        results = self._execute_urlscan_query(query_string)
+        # Execute the query based on the platform
+        if platform == "silentpush":
+            # Placeholder for SilentPush API integration
+            print(f"SilentPush API integration not yet implemented. Query: {query_string}")
+            results = []
+        else:  # Default to urlscan
+            # Execute the query using urlscan.io
+            results = self._execute_urlscan_query(query_string)
         
         if results:
             # Download thumbnails for each result
@@ -655,6 +669,7 @@ class MasqMonitor:
             description = details.get('description', 'No description')
             frequency = details.get('frequency', 'Not specified')
             priority = details.get('priority', 'Not specified')
+            platform = details.get('platform', 'urlscan')
             tags = ", ".join(details.get('tags', [])) or "None"
             
             # Determine if this is a query or query group
@@ -673,9 +688,10 @@ class MasqMonitor:
                 else:
                     print("  Queries: None")
             else:
-                # For regular queries, display the query string
+                # For regular queries, display the query string and platform
                 query_string = details.get('query', 'No query string defined')
                 print(f"  Query: {query_string}")
+                print(f"  Platform: {platform}")
             
             print(f"  Suggested Frequency: {frequency}")
             print(f"  Priority: {priority}")
@@ -717,6 +733,11 @@ class MasqMonitor:
         report_tlp = self._determine_tlp_level(query_name, tlp_level)
         print(f"Report TLP level: {report_tlp}")
         
+        # Get query configuration and platform
+        query_data = self.config["queries"].get(query_name, {})
+        platform = query_data.get("platform", "urlscan")
+        print(f"Using platform: {platform}")
+        
         # Create a unique output directory for this test
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         run_dir = self.output_dir / f"{query_name}_{timestamp}_test"
@@ -740,13 +761,13 @@ class MasqMonitor:
                 result["local_screenshot"] = f"images/{uuid}.png"
 
         # Add debug information if requested
-        query_data = self.config["queries"].get(query_name, {})
         if debug:
             print("Adding debug information to the report...")
             # Add a debug section to show JSON representations of key data
             debug_info = {
                 "query_data": query_data,
                 "tlp_level": report_tlp,
+                "platform": platform,
                 "references": query_data.get("references", []),
                 "tlp_order": {"clear": 1, "white": 1, "green": 2, "amber": 3, "red": 4}
             }

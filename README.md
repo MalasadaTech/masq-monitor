@@ -1,19 +1,20 @@
 # Masquerade Monitor
 
-A Python application to help automate monitoring for website masquerades using urlscan.io.
+A Python application to help automate monitoring for website masquerades using urlscan.io and other search platforms.
 
 ## Overview
 
-Masquerade Monitor can help you track potential phishing campaigns (or other campaigns) by searching for websites mimicking legitimate brands. The tool queries urlscan.io for new scans that match your monitoring criteria, saving the results as HTML reports with thumbnail previews.
+Masquerade Monitor can help you track potential phishing campaigns (or other campaigns) by searching for websites mimicking legitimate brands. The tool queries search platforms like urlscan.io for new scans that match your monitoring criteria, saving the results as HTML reports with thumbnail previews.
 
 The basic idea:
 It takes a list of monitoring pivots, and performs API calls to check if there is anything new since the last check.
 
-It currently supports urlscan.io requests with plans to expand to other sources in the future. urlscan.io is used because they allow free API searches that should suffice for basic monitoring.
+It currently supports urlscan.io requests with plans to expand to other sources (including Silent Push API) in the future. urlscan.io is used because they allow free API searches that should suffice for basic monitoring.
 
 ## Features
 
-- Queries urlscan.io for potential masquerade websites (BYO-Queries)
+- Queries search platforms for potential masquerade websites (BYO-Queries)
+- Multiple platform support (urlscan.io, with Silent Push API coming soon)
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
@@ -176,6 +177,7 @@ The configuration file is in JSON format with the following structure:
     "queries": {
         "usaa-title": {
             "query": "page.title:\"Member Account Login | USAA\"",
+            "platform": "urlscan",
             "description": "This report shows one subset of phishing sites that masquerade as USAA.",
             "description_tlp_level": "clear",
             "query_tlp_level": "green",
@@ -267,10 +269,12 @@ The configuration file is in JSON format with the following structure:
 - `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
 - `report_username`: Your name or username to be displayed in generated reports.
 - `default_template_path`: The default template to use for all queries that don't have a specific template.
-- `queries`: A map of named queries to execute against urlscan.io.
+- `queries`: A map of named queries to execute against search platforms.
+  - `platform`: Search platform to use for this query. Currently supported: "urlscan", "silentpush" (coming soon). Defaults to "urlscan" if not specified.
+  - `query`: The search query string formatted for the specified platform.
   - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
-  - `query_tlp_level`: TLP (Traffic Light Protocol) classification for the query itself. Determines how sensitive the search pattern is. Values: "clear", "green", "amber", "red".
-  - `default_tlp_level`: Default TLP classification for report content. Used for report elements without their own explicit TLP level. Values: "clear", "green", "amber", "red".
+  - `query_tlp_level`: TLP (Traffic Light Protocol) classification for the query itself. Determines how sensitive the search pattern is. Values: "clear", "white", "green", "amber", "red".
+  - `default_tlp_level`: Default TLP classification for report content. Used for report elements without their own explicit TLP level. Values: "clear", "white", "green", "amber", "red".
   - `template_path`: Optional per-query HTML template to use for the report. If not specified, falls back to the global `default_template_path`.
   - `reference`: Optional link to documentation or source for the query.
   - `notes`: Additional contextual information about the query.
@@ -358,6 +362,8 @@ For a detailed history of changes and improvements, please see the [changelog.md
 - ✓ Add query metadata options (reference, notes, frequency, priority, tags)
 - ✓ Add query groups for organizing related queries and generating comprehensive reports
 - ✓ Move API keys to .env file for better security
+- ✓ Add support for multiple search platforms including "urlscan" and "silentpush"
+- Implement Silent Push API integration
 - Implement email notifications for new findings
 - Support for custom report templates
 - Add ability to export results to CSV/JSON
