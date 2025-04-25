@@ -958,7 +958,7 @@
                                         <dt>Scan Date:</dt>
                                         <dd>{{ result.task.time }}</dd>
                                         
-                                        <dt>URLScan Link:</dt>
+                                        <dt>Query Link:</dt>
                                         <dd>
                                             <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
                                         </dd>
@@ -998,7 +998,7 @@
                                 <dt>Scan Date:</dt>
                                 <dd>{{ result.task.time }}</dd>
                                 
-                                <dt>URLScan Link:</dt>
+                                <dt>Query Link:</dt>
                                 <dd>
                                     <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
                                 </dd>
@@ -1108,7 +1108,7 @@
         // Close modal with escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                // First check if theme panel is open and close that
+                // First check if theme panel is
                 if (themePanel.style.display === 'flex') {
                     themePanel.style.display = 'none';
                 }

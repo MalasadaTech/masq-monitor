@@ -15,6 +15,7 @@
 - Enhanced the query listing display to show query types (Query vs Query Group)
 - Improved display of query groups to show member queries instead of query strings
 - Better formatting for `--list` command output with consistent structure
+- Refactored result-card link in template from "URLScan Link:" to "Query Link:" for platform-agnostic labeling
 
 ## April 20, 2025
 - Added support for query groups to organize related queries
