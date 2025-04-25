@@ -11,11 +11,13 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 import re
 from urllib.parse import urlparse
+from dotenv import load_dotenv
 
 class MasqMonitor:
-    def __init__(self, config_path="config.json", api_key_path="api_key.json"):
+    def __init__(self, config_path="config.json"):
         self.config_path = config_path
-        self.api_key_path = api_key_path
+        # Load environment variables from .env file
+        load_dotenv()
         self.config = self._load_config()
         self.urlscan_api_key = self._load_api_key()
         self.output_dir = Path(self.config.get("output_directory", "output"))
@@ -38,27 +40,22 @@ class MasqMonitor:
             exit(1)
 
     def _load_api_key(self):
-        """Load API key from a separate file."""
-        try:
-            with open(self.api_key_path, 'r') as f:
-                api_data = json.load(f)
-                return api_data.get("urlscan_api_key", "")
-        except FileNotFoundError:
+        """Load API key from environment variables."""
+        # Get the API key from environment variables
+        api_key = os.getenv('URLSCAN_API_KEY')
+        if not api_key:
             # Check if API key exists in config for backward compatibility
             legacy_api_key = self.config.get("api_key", "")
             if legacy_api_key:
-                print(f"API key file not found at {self.api_key_path}. Using API key from config.json.")
-                print("Consider moving your API key to api_key.json for better security and sharing capabilities.")
+                print("Using API key from config.json.")
+                print("Consider moving your API key to a .env file for better security and sharing capabilities.")
                 return legacy_api_key
             else:
-                print(f"API key file not found at {self.api_key_path}.")
-                print("Please create it based on api_key.example.json.")
+                print("No API key found in environment variables.")
+                print("Please create a .env file with URLSCAN_API_KEY.")
                 print("You can continue without an API key, but some features may be limited.")
                 return ""
-        except json.JSONDecodeError:
-            print(f"Error parsing the API key file at {self.api_key_path}.")
-            print("Using empty API key.")
-            return ""
+        return api_key
 
     def _save_config(self):
         """Save the updated configuration to the config file."""
@@ -773,7 +770,6 @@ class MasqMonitor:
 def main():
     parser = argparse.ArgumentParser(description="Monitor for masquerades using urlscan.io")
     parser.add_argument("--config", default="config.json", help="Path to configuration file")
-    parser.add_argument("--api-key-file", default="api_key.json", help="Path to API key file")
     parser.add_argument("--list", action="store_true", help="List available queries")
     parser.add_argument("--query", help="Run a specific query")
     parser.add_argument("--query-group", help="Run a specific query group")
@@ -793,7 +789,7 @@ def main():
     
     args = parser.parse_args()
     
-    monitor = MasqMonitor(config_path=args.config, api_key_path=args.api_key_file)
+    monitor = MasqMonitor(config_path=args.config)
     
     # Use default_days from config if --days not specified
     days = args.days if args.days is not None else monitor.config.get("default_days")

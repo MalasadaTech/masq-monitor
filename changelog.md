@@ -1,6 +1,12 @@
 # Changelog
 
 ## April 24, 2025
+- Migrated API key storage from JSON to .env file for improved security
+- Added python-dotenv integration for loading environment variables
+- Removed all references to api_key.json while maintaining backward compatibility
+- Added .env and related files to .gitignore
+- Created .env.example template file for easier setup
+- Updated documentation for new API key configuration approach
 - Fixed error when listing queries with query groups by safely accessing query attributes
 - Enhanced the query listing display to show query types (Query vs Query Group)
 - Improved display of query groups to show member queries instead of query strings

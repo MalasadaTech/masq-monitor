@@ -27,7 +27,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 - Defangs IOCs (URLs and domains) in reports for safer sharing
 - Customizable report username
 - Branded footer with project links
-- API keys stored in separate file for easier team sharing of monitoring configurations
+- API keys stored in .env file for better security
 
 ## Example Monitoring Techniques
 
@@ -56,35 +56,33 @@ pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
-4. Create your API key file:
+4. Create your .env file for API keys:
 ```
-cp api_key.example.json api_key.json
+cp .env.example .env
 ```
 
-5. Edit `api_key.json` with your urlscan.io API key:
-```json
-{
-    "urlscan_api_key": "YOUR_URLSCAN_API_KEY"
-}
+5. Edit `.env` with your urlscan.io API key:
+```
+URLSCAN_API_KEY=your_urlscan_api_key_here
 ```
 
 6. Edit `config.json` with your desired monitoring queries.
 
 ## API Key Configuration
 
-The API key is stored separately from the main configuration to make sharing monitoring configurations easier within teams. Store your URLScan.io API key in `api_key.json`:
+API keys are stored in a `.env` file, following security best practices. This keeps sensitive credentials out of your code and configuration files. To set up your API key:
 
-```json
-{
-    "urlscan_api_key": "YOUR_URLSCAN_API_KEY"
-}
+1. Create a `.env` file in the root directory of the project (or copy from `.env.example`)
+2. Add your URLScan.io API key:
+```
+URLSCAN_API_KEY=your_urlscan_api_key_here
 ```
 
-This file is included in `.gitignore` to prevent accidentally committing your API key.
+The `.env` file is included in `.gitignore` to prevent accidentally committing your API keys to version control.
 
 ## Team Sharing
 
-With this setup, team members can share their configuration files (queries, reporting preferences, etc.) without exposing their API keys. Simply share the `config.json` file, and each team member can use their own `api_key.json` file.
+With this setup, team members can share their configuration files (queries, reporting preferences, etc.) without exposing their API keys. Simply share the `config.json` file, and each team member can use their own `.env` file with their personal API key.
 
 ## Usage
 
@@ -148,10 +146,10 @@ You can also limit all queries to a timeframe:
 python masq_monitor.py --all --all-groups -d 30
 ```
 
-### Specify Custom Config and API Key Files
+### Specify Custom Config File
 
 ```
-python masq_monitor.py --config my_custom_config.json --api-key-file my_api_key.json --all
+python masq_monitor.py --config my_custom_config.json --all
 ```
 
 ### Override Default TLP Level
@@ -359,6 +357,7 @@ For a detailed history of changes and improvements, please see the [changelog.md
 - ✓ Prioritize using `last_run` timestamp before falling back to `default_days`
 - ✓ Add query metadata options (reference, notes, frequency, priority, tags)
 - ✓ Add query groups for organizing related queries and generating comprehensive reports
+- ✓ Move API keys to .env file for better security
 - Implement email notifications for new findings
 - Support for custom report templates
 - Add ability to export results to CSV/JSON
