@@ -4,6 +4,9 @@ output/
 # Configuration files
 config.json
 api_key.json
+.env
+.env.*
+!.env.example
 
 # Python-related files
 __pycache__/
