@@ -1,6 +1,13 @@
 # Changelog
 
-## April 24, 2025
+## April 26, 2025
+- Refactored report generation code into a separate file (`generate_report.py`)
+- Created a dedicated `ReportGenerator` class to handle all report generation functionality
+- Improved code organization and maintainability by separating concerns
+- Reduced the size of the main `masq_monitor.py` file
+- Updated `MasqMonitor` class to delegate report generation to the `ReportGenerator` instance
+
+## April 25, 2025
 - Added Silent Push WHOIS scan query capability.
 
 ## April 24, 2025
