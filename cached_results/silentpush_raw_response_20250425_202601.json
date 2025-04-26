@@ -1,0 +1,164 @@
+{
+  "timestamp": "2025-04-25T20:26:01.630572",
+  "query": "datasource = \"whois\" AND domain = \"malasada.tech\" AND scan_date >=\"2024-04-25 00:00:00\"",
+  "response": {
+    "status_code": 200,
+    "error": null,
+    "response": {
+      "metadata": {
+        "job_id": "0a1f1683-454b-43e4-ac5e-5a1f13f89ebb",
+        "query_name": "whois/search/_spql",
+        "results_returned": 6,
+        "results_total_at_least": 6,
+        "timestamp": 1745648763,
+        "with_metadata": 1
+      },
+      "scandata_raw": [
+        {
+          "address": "5335 Gate Parkway care of Domain Privacy Service FBO Registrant",
+          "city": "Jacksonville",
+          "country": "US",
+          "created": "2024-03-01 20:54:18",
+          "domain": "malasada.tech",
+          "email": [
+            "domain.operations@web.com",
+            "eq78n6ez83a@bluehostprivatename.com"
+          ],
+          "expires": "2026-03-01 23:59:59",
+          "name": "PERFECT PRIVACY, LLC",
+          "nameserver": [
+            "ns1.bluehost.com",
+            "ns2.bluehost.com"
+          ],
+          "nshash": "78b1099758b5f3b4fcbb79b3798e4a18",
+          "organization": "None",
+          "registrar": "NETWORK SOLUTIONS, LLC.",
+          "scan_date": "2025-04-18 01:14:56",
+          "state": "FL",
+          "updated": "2025-02-19 09:42:06",
+          "zipcode": "32256"
+        },
+        {
+          "address": "5335 Gate Parkway care of Domain Privacy Service FBO Registrant",
+          "city": "Jacksonville",
+          "country": "US",
+          "created": "2024-03-01 20:54:18",
+          "domain": "malasada.tech",
+          "email": [
+            "domain.operations@web.com",
+            "eq78n6ez83a@bluehostprivatename.com"
+          ],
+          "expires": "2026-03-01 23:59:59",
+          "name": "PERFECT PRIVACY, LLC",
+          "nameserver": [
+            "ns1.bluehost.com",
+            "ns2.bluehost.com"
+          ],
+          "nshash": "78b1099758b5f3b4fcbb79b3798e4a18",
+          "organization": "None",
+          "registrar": "FastDomain Inc.",
+          "scan_date": "2025-02-15 02:07:15",
+          "state": "FL",
+          "updated": "2025-02-14 09:38:19",
+          "zipcode": "32256"
+        },
+        {
+          "address": "5335 Gate Parkway care of Domain Privacy Service FBO Registrant",
+          "city": "Jacksonville",
+          "country": "US",
+          "created": "2024-03-01 20:54:18",
+          "domain": "malasada.tech",
+          "email": [
+            "domain.operations@web.com",
+            "eq78n6ez83a@bluehostprivatename.com"
+          ],
+          "expires": "2025-03-01 23:59:59",
+          "name": "PERFECT PRIVACY, LLC",
+          "nameserver": [
+            "ns1.bluehost.com",
+            "ns2.bluehost.com"
+          ],
+          "nshash": "78b1099758b5f3b4fcbb79b3798e4a18",
+          "organization": "None",
+          "registrar": "FastDomain Inc.",
+          "scan_date": "2024-12-16 02:06:07",
+          "state": "FL",
+          "updated": "2024-03-06 21:02:05",
+          "zipcode": "32256"
+        },
+        {
+          "address": "5335 Gate Parkway care of Domain Privacy Service FBO Registrant",
+          "city": "Jacksonville",
+          "country": "US",
+          "created": "2024-03-01 20:54:18",
+          "domain": "malasada.tech",
+          "email": [
+            "domain.operations@web.com",
+            "eq78n6ez83a@bluehostprivatename.com"
+          ],
+          "expires": "2025-03-01 23:59:59",
+          "name": "PERFECT PRIVACY, LLC",
+          "nameserver": [
+            "ns1.bluehost.com",
+            "ns2.bluehost.com"
+          ],
+          "nshash": "78b1099758b5f3b4fcbb79b3798e4a18",
+          "organization": "None",
+          "registrar": "FastDomain Inc.",
+          "scan_date": "2024-10-15 08:02:12",
+          "state": "FL",
+          "updated": "2024-03-06 21:02:05",
+          "zipcode": "32256"
+        },
+        {
+          "address": "5335 Gate Parkway care of Domain Privacy Service FBO Registrant",
+          "city": "Jacksonville",
+          "country": "US",
+          "created": "2024-03-01 20:54:18",
+          "domain": "malasada.tech",
+          "email": [
+            "domain.operations@web.com",
+            "eq78n6ez83a@bluehostprivatename.com"
+          ],
+          "expires": "2025-03-01 23:59:59",
+          "name": "PERFECT PRIVACY, LLC",
+          "nameserver": [
+            "ns1.bluehost.com",
+            "ns2.bluehost.com"
+          ],
+          "nshash": "78b1099758b5f3b4fcbb79b3798e4a18",
+          "organization": "None",
+          "registrar": "FastDomain Inc.",
+          "scan_date": "2024-09-01 01:07:16",
+          "state": "FL",
+          "updated": "2024-03-06 21:02:05",
+          "zipcode": "32256"
+        },
+        {
+          "address": "5335 Gate Parkway care of Domain Privacy Service FBO Registrant",
+          "city": "Jacksonville",
+          "country": "US",
+          "created": "2024-03-01 20:54:18",
+          "domain": "malasada.tech",
+          "email": [
+            "domain.operations@web.com",
+            "eq78n6ez83a@bluehostprivatename.com"
+          ],
+          "expires": "2025-03-01 23:59:59",
+          "name": "PERFECT PRIVACY, LLC",
+          "nameserver": [
+            "ns1.bluehost.com",
+            "ns2.bluehost.com"
+          ],
+          "nshash": "78b1099758b5f3b4fcbb79b3798e4a18",
+          "organization": "None",
+          "registrar": "FastDomain Inc.",
+          "scan_date": "2024-07-02 01:11:06",
+          "state": "FL",
+          "updated": "2024-03-06 21:02:05",
+          "zipcode": "32256"
+        }
+      ]
+    }
+  }
+}

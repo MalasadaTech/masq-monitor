@@ -1,6 +1,11 @@
 # Changelog
 
 ## April 26, 2025
+- Improved Silent Push integration to properly handle multiple data types (webscan and WHOIS)
+- Added automatic detection of Silent Push data types based on record fields
+- Added specialized webscan result rendering in reports with organized sections for website, SSL, and GeoIP data
+- Fixed ISO 8601 date formatting with T and Z modifiers for Silent Push queries (scan_date field)
+- Enhanced report templates to properly display different types of Silent Push results
 - Refactored report generation code into a separate file (`generate_report.py`)
 - Created a dedicated `ReportGenerator` class to handle all report generation functionality
 - Improved code organization and maintainability by separating concerns

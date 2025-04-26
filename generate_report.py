@@ -133,87 +133,76 @@ class ReportGenerator:
             if isinstance(results, dict) and "response" in results:
                 response_obj = results["response"]
                 
-                # Check if this contains WHOIS data in the nested structure
+                # Check if this contains data in the nested structure
                 if (isinstance(response_obj, dict) and 
                     "response" in response_obj and 
                     isinstance(response_obj["response"], dict) and 
                     "scandata_raw" in response_obj["response"]):
                     
-                    # Extract WHOIS records from the nested structure
-                    whois_records = response_obj["response"]["scandata_raw"]
+                    # Extract records from the nested structure
+                    sp_records = response_obj["response"]["scandata_raw"]
                     
-                    if isinstance(whois_records, list):
-                        # Process each WHOIS record
-                        for record in whois_records:
-                            if isinstance(record, dict):
+                    if isinstance(sp_records, list):
+                        # Process each record based on its data type
+                        for record in sp_records:
+                            if not isinstance(record, dict):
+                                continue
+                                
+                            # Determine the data type based on the record fields
+                            data_type = self._determine_silentpush_data_type(record)
+                            
+                            if data_type == "whois":
+                                processed_result = self._process_silentpush_whois(record)
+                            elif data_type == "webscan":
+                                processed_result = self._process_silentpush_webscan(record)
+                            else:
+                                # Generic fallback for unknown data types
                                 processed_result = {
-                                    "data_type": "whois",
-                                    "domain": record.get("domain", "N/A"),
-                                    "registrar": record.get("registrar", "N/A"),
-                                    "created": record.get("created", "N/A"),
-                                    "updated": record.get("updated", "N/A"),
-                                    "expires": record.get("expires", "N/A"),
-                                    "name": record.get("name", "N/A"),
-                                    "email": ", ".join(record.get("email", [])) if isinstance(record.get("email"), list) else record.get("email", "N/A"),
-                                    "organization": record.get("organization", "N/A") if record.get("organization") != "None" else "N/A",
-                                    "nameserver": ", ".join(record.get("nameserver", [])) if isinstance(record.get("nameserver"), list) else record.get("nameserver", "N/A"),
-                                    "address": record.get("address", "N/A"),
-                                    "city": record.get("city", "N/A"),
-                                    "state": record.get("state", "N/A"),
-                                    "country": record.get("country", "N/A"),
-                                    "zipcode": record.get("zipcode", "N/A"),
-                                    "scan_date": record.get("scan_date", "N/A")
+                                    "data_type": "generic",
+                                    "raw_data": json.dumps(record, indent=2)
                                 }
-                                processed_results.append(processed_result)
+                                
+                            processed_results.append(processed_result)
                         
                         if not processed_results:
                             # No valid records found in the expected structure
                             processed_results.append({
                                 "data_type": "message",
-                                "message": "No WHOIS records found in the SilentPush response."
+                                "message": "No valid records found in the SilentPush response."
                             })
                     else:
-                        # Couldn't find valid WHOIS data list in the expected structure
+                        # Couldn't find valid data list in the expected structure
                         processed_results.append({
                             "data_type": "message",
-                            "message": "SilentPush response doesn't contain a valid list of WHOIS records."
+                            "message": "SilentPush response doesn't contain a valid list of records."
                         })
                 else:
-                    # This doesn't appear to be a standard WHOIS response structure
+                    # This doesn't appear to be a standard response structure
                     processed_results.append({
                         "data_type": "message",
-                        "message": "SilentPush response doesn't contain the expected WHOIS data structure."
+                        "message": "SilentPush response doesn't contain the expected data structure."
                     })
             elif isinstance(results, list):
                 # Process individual SilentPush results (direct format)
                 for result in results:
-                    # For WHOIS data, create a structure compatible with the template
-                    if isinstance(result, dict) and "domain" in result:  # This is WHOIS data
-                        processed_result = {
-                            "data_type": "whois",
-                            "domain": result.get("domain", "N/A"),
-                            "registrar": result.get("registrar", "N/A"),
-                            "created": result.get("created", "N/A"),
-                            "updated": result.get("updated", "N/A"),
-                            "expires": result.get("expires", "N/A"),
-                            "name": result.get("name", "N/A"),
-                            "email": ", ".join(result.get("email", [])) if isinstance(result.get("email"), list) else result.get("email", "N/A"),
-                            "organization": result.get("organization", "N/A") if result.get("organization") != "None" else "N/A",
-                            "nameserver": ", ".join(result.get("nameserver", [])) if isinstance(result.get("nameserver"), list) else result.get("nameserver", "N/A"),
-                            "address": result.get("address", "N/A"),
-                            "city": result.get("city", "N/A"),
-                            "state": result.get("state", "N/A"),
-                            "country": result.get("country", "N/A"),
-                            "zipcode": result.get("zipcode", "N/A"),
-                            "scan_date": result.get("scan_date", "N/A")
-                        }
-                        processed_results.append(processed_result)
+                    if not isinstance(result, dict):
+                        continue
+                        
+                    # Determine the data type based on the record fields
+                    data_type = self._determine_silentpush_data_type(result)
+                    
+                    if data_type == "whois":
+                        processed_result = self._process_silentpush_whois(result)
+                    elif data_type == "webscan":
+                        processed_result = self._process_silentpush_webscan(result)
                     else:
-                        # Generic handling for other SilentPush data types
-                        processed_results.append({
+                        # Generic fallback for unknown data types
+                        processed_result = {
                             "data_type": "generic",
                             "raw_data": json.dumps(result, indent=2)
-                        })
+                        }
+                        
+                    processed_results.append(processed_result)
             else:
                 # Unrecognized format
                 processed_results.append({
@@ -578,3 +567,142 @@ class ReportGenerator:
         
         # An item is visible if its TLP level is less than or equal to the report TLP level
         return item_level <= report_level
+    
+    def _determine_silentpush_data_type(self, record):
+        """
+        Determine the type of data in a SilentPush record based on its fields.
+        
+        Args:
+            record: The record to analyze
+            
+        Returns:
+            str: The data type ("webscan", "whois", or "unknown")
+        """
+        # Check for datasource field first (most reliable)
+        if "datasource" in record:
+            datasource = record.get("datasource", "").lower()
+            if datasource == "webscan" or datasource == "torscan":
+                return "webscan"
+            elif datasource == "whois":
+                return "whois"
+        
+        # If no datasource field or it's not recognized, try to infer from other fields
+        if "registrar" in record and "domain" in record and ("name" in record or "organization" in record):
+            return "whois"
+        elif "url" in record and "html_body_sha256" in record:
+            return "webscan"
+        elif "url" in record and "htmltitle" in record:
+            return "webscan"
+        elif "domain" in record and "scan_date" in record and "created" in record:
+            return "whois"
+            
+        # If we get here, try a final simple check
+        webscan_indicators = ["favicon", "html", "header", "body_analysis", "ssl"]
+        whois_indicators = ["registrar", "nameserver", "emails"]
+        
+        webscan_score = 0
+        whois_score = 0
+        
+        for key in record.keys():
+            for indicator in webscan_indicators:
+                if indicator in key:
+                    webscan_score += 1
+            for indicator in whois_indicators:
+                if indicator in key:
+                    whois_score += 1
+                    
+        if webscan_score > whois_score:
+            return "webscan"
+        elif whois_score > webscan_score:
+            return "whois"
+            
+        # Default to unknown
+        return "unknown"
+        
+    def _process_silentpush_whois(self, record):
+        """
+        Process a WHOIS record from SilentPush and return a standardized structure.
+        
+        Args:
+            record: The WHOIS record to process
+            
+        Returns:
+            dict: Processed WHOIS data
+        """
+        return {
+            "data_type": "whois",
+            "domain": record.get("domain", "N/A"),
+            "registrar": record.get("registrar", "N/A"),
+            "created": record.get("created", "N/A"),
+            "updated": record.get("updated", "N/A"),
+            "expires": record.get("expires", "N/A"),
+            "name": record.get("name", "N/A"),
+            "email": ", ".join(record.get("email", [])) if isinstance(record.get("email"), list) else record.get("email", "N/A"),
+            "organization": record.get("organization", "N/A") if record.get("organization") != "None" else "N/A",
+            "nameserver": ", ".join(record.get("nameserver", [])) if isinstance(record.get("nameserver"), list) else record.get("nameserver", "N/A"),
+            "address": record.get("address", "N/A"),
+            "city": record.get("city", "N/A"),
+            "state": record.get("state", "N/A"),
+            "country": record.get("country", "N/A"),
+            "zipcode": record.get("zipcode", "N/A"),
+            "scan_date": record.get("scan_date", "N/A")
+        }
+    
+    def _process_silentpush_webscan(self, record):
+        """
+        Process a webscan record from SilentPush and return a standardized structure.
+        
+        Args:
+            record: The webscan record to process
+            
+        Returns:
+            dict: Processed webscan data with relevant fields
+        """
+        # Format a more readable domain and URL with proper defanging
+        domain = record.get("domain", "")
+        url = record.get("url", "")
+        defanged_domain = self._defang_domain(domain) if domain else ""
+        defanged_url = self._defang_url(url) if url else ""
+        
+        # Get SSL certificate information if available
+        ssl_info = {}
+        if "ssl" in record and isinstance(record["ssl"], dict):
+            ssl = record["ssl"]
+            ssl_info = {
+                "issuer": ssl.get("issuer", {}).get("organization", "N/A"),
+                "expires": ssl.get("not_after", "N/A"),
+                "issued": ssl.get("not_before", "N/A"),
+                "sans_count": ssl.get("sans_count", 0),
+                "wildcard": ssl.get("wildcard", False)
+            }
+        
+        # Get GeoIP information if available
+        geoip_info = {}
+        if "geoip" in record and isinstance(record["geoip"], dict):
+            geoip = record["geoip"]
+            geoip_info = {
+                "country": geoip.get("country_name", "N/A"),
+                "city": geoip.get("city_name", "N/A"),
+                "isp": geoip.get("as_org", "N/A"),
+                "asn": geoip.get("asn", "N/A"),
+                "latitude": geoip.get("latitude", "N/A"),
+                "longitude": geoip.get("longitude", "N/A")
+            }
+            
+        # Return standardized structure for webscan data
+        return {
+            "data_type": "webscan",
+            "domain": domain,
+            "defanged_domain": defanged_domain,
+            "url": url,
+            "defanged_url": defanged_url,
+            "htmltitle": record.get("htmltitle", "N/A"),
+            "ip": record.get("ip", "N/A"),
+            "response_code": record.get("response", "N/A"),
+            "scan_date": record.get("scan_date", "N/A"),
+            "server": record.get("header", {}).get("server", "N/A"),
+            "content_type": record.get("header", {}).get("content-type", "N/A"),
+            "ssl": ssl_info,
+            "geoip": geoip_info,
+            "raw_record": record  # Include the raw record for template to access any field
+        }

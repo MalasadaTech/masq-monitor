@@ -50,26 +50,33 @@ class SilentPushClient:
             Properly formatted query string
         """
         # Process the query to ensure proper date formatting
-        # SilentPush format for date queries: scan_date >= "YYYY-MM-DD HH:MM:SS"
+        # SilentPush format for date queries: scan_date >= "YYYY-MM-DDTHH:MM:SSZ"
         
         # Check for potential date formatting issues
         if "date:" in query:
             # This appears to be the wrong format - replace with proper scan_date syntax
             query = query.replace("date:", "scan_date ")
         
-        # If a date is specified without quotes, add them
-        # This regex would match patterns like: scan_date >= 2025-02-15
         import re
-        date_pattern = r'scan_date\s*(?:[<>=!]+)\s*([0-9]{4}-[0-9]{2}-[0-9]{2}(?:\s+[0-9]{2}:[0-9]{2}:[0-9]{2})?)'
         
-        def add_quotes_to_date(match):
+        # Convert regular date format (YYYY-MM-DD HH:MM:SS) to ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+        date_pattern = r'scan_date\s*(?:[<>=!]+)\s*"?([0-9]{4}-[0-9]{2}-[0-9]{2}(?:\s+[0-9]{2}:[0-9]{2}:[0-9]{2})?)(?:"|\s|$)'
+        
+        def format_date_iso8601(match):
             date_str = match.group(1)
-            # If this is just a date without time, add " 00:00:00"
+            operator = match.group(0)[9:match.start(1) - match.start(0)].strip()
+            
+            # If this is just a date without time, add time component
             if len(date_str) == 10:  # YYYY-MM-DD format
-                date_str = f"{date_str} 00:00:00"
-            return f'scan_date{match.group(0)[9:match.start(1) - match.start(0)]}"{date_str}"'
+                date_str = f"{date_str}T00:00:00Z"
+            else:
+                # Convert 'YYYY-MM-DD HH:MM:SS' to 'YYYY-MM-DDTHH:MM:SSZ'
+                date_str = date_str.replace(" ", "T") + "Z"
+            
+            # Return with proper quoting
+            return f'scan_date {operator} "{date_str}"'
         
-        query = re.sub(date_pattern, add_quotes_to_date, query)
+        query = re.sub(date_pattern, format_date_iso8601, query)
         
         return query
     
