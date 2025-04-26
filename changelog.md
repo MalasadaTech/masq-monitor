@@ -1,6 +1,9 @@
 # Changelog
 
 ## April 24, 2025
+- Added Silent Push WHOIS scan query capability.
+
+## April 24, 2025
 - Refactored `save_urlscan_results` into platform-independent `save_results` function
 - Added platform-independent `load_results` function to work with any API platform
 - Maintained backward compatibility with legacy `save_urlscan_results` and `load_urlscan_results` methods

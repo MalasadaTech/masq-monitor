@@ -436,6 +436,104 @@
             }
         }
 
+        /* WHOIS data styling */
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+        
+        .card-header {
+            background-color: var(--header-bg);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-header h5 {
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        .card-body {
+            padding: 15px;
+        }
+        
+        .text-muted {
+            color: var(--meta-color);
+            font-size: 0.9em;
+        }
+        
+        .mb-0 {
+            margin-bottom: 0 !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 15px !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 20px !important;
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        
+        .col-md-6 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        .list-group {
+            display: flex;
+            flex-direction: column;
+            padding-left: 0;
+            margin-bottom: 0;
+            border-radius: 0.25rem;
+        }
+        
+        .list-group-item {
+            position: relative;
+            display: block;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-top-width: 0;
+        }
+        
+        .list-group-item:first-child {
+            border-top-width: 1px;
+            border-top-left-radius: 0.25rem;
+            border-top-right-radius: 0.25rem;
+        }
+        
+        .list-group-item:last-child {
+            border-bottom-right-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+        
+        .json-content {
+            background-color: var(--metadata-bg);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
         /* Query Section Styling */
         .query-section {
             margin-bottom: 40px;
@@ -793,6 +891,7 @@
                                 </div>
                                 {% endif %}
 
+                                <!-- Additional sections for metadata -->
                                 {% if section.config.notes %}
                                 <div class="metadata-item">
                                     <span class="metadata-label">Notes:</span>
@@ -971,41 +1070,95 @@
                     {% endfor %}
                 {% else %}
                     <!-- Standard single-query report -->
-                    <div class="results">
-                    {% for result in results %}
-                        <div class="result-card">
-                            {% if result.base64_screenshot %}
-                            <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
-                            {% elif result.local_screenshot %}
-                            <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                    <!-- Platform-specific result display based on data type -->
+                    {% if platform == "silentpush" %}
+                        {% for result in results %}
+                            <!-- WHOIS record display for SilentPush -->
+                            {% if result.data_type == "whois" %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: {{ result.domain }}</h5>
+                                    <small class="text-muted">Scan Date: {{ result.scan_date }}</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> {{ result.domain }}</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> {{ result.registrar }}</li>
+                                                <li class="list-group-item"><strong>Created:</strong> {{ result.created }}</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> {{ result.updated }}</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> {{ result.expires }}</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> {{ result.nameserver }}</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> {{ result.name }}</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> {{ result.organization }}</li>
+                                                <li class="list-group-item"><strong>Email:</strong> {{ result.email }}</li>
+                                                <li class="list-group-item"><strong>Address:</strong> {{ result.address }}</li>
+                                                <li class="list-group-item"><strong>City:</strong> {{ result.city }}</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> {{ result.state }}</li>
+                                                <li class="list-group-item"><strong>Country:</strong> {{ result.country }}</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> {{ result.zipcode }}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% elif result.data_type == "generic" %}
+                            <!-- Generic display for other SilentPush data types -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">SilentPush Result</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="json-content">{{ result.raw_data | tojson(indent=2) }}</pre>
+                                </div>
+                            </div>
                             {% endif %}
-                            
-                            <dl class="result-info">
-                                <dt>URL:</dt>
-                                <dd class="url">
-                                    {{ result.defanged_url if result.defanged_url else result.page.url }}
-                                </dd>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Default URLScan.io display -->
+                        <div class="results">
+                        {% for result in results %}
+                            <div class="result-card">
+                                {% if result.base64_screenshot %}
+                                <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                                {% elif result.local_screenshot %}
+                                <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+                                {% endif %}
                                 
-                                <dt>Domain:</dt>
-                                <dd>{{ result.defanged_domain if result.defanged_domain else result.page.domain }}</dd>
-                                
-                                <dt>Page Title:</dt>
-                                <dd>{{ result.page.title }}</dd>
-                                
-                                <dt>IP Address:</dt>
-                                <dd>{{ result.page.ip }}</dd>
-                                
-                                <dt>Scan Date:</dt>
-                                <dd>{{ result.task.time }}</dd>
-                                
-                                <dt>Query Link:</dt>
-                                <dd>
-                                    <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
-                                </dd>
-                            </dl>
+                                <dl class="result-info">
+                                    <dt>URL:</dt>
+                                    <dd class="url">
+                                        {{ result.defanged_url if result.defanged_url else result.page.url }}
+                                    </dd>
+                                    
+                                    <dt>Domain:</dt>
+                                    <dd>{{ result.defanged_domain if result.defanged_domain else result.page.domain }}</dd>
+                                    
+                                    <dt>Page Title:</dt>
+                                    <dd>{{ result.page.title }}</dd>
+                                    
+                                    <dt>IP Address:</dt>
+                                    <dd>{{ result.page.ip }}</dd>
+                                    
+                                    <dt>Scan Date:</dt>
+                                    <dd>{{ result.task.time }}</dd>
+                                    
+                                    <dt>Query Link:</dt>
+                                    <dd>
+                                        <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
+                                    </dd>
+                                </dl>
+                            </div>
+                        {% endfor %}
                         </div>
-                    {% endfor %}
-                    </div>
+                    {% endif %}
                 {% endif %}
             {% else %}
                 <p>No results found for this query.</p>

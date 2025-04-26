@@ -9,6 +9,7 @@ import requests
 import base64
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
+import jinja2
 import re
 from urllib.parse import urlparse
 from dotenv import load_dotenv
@@ -21,12 +22,12 @@ class MasqMonitor:
         # Load environment variables from .env file
         load_dotenv()
         self.config = self._load_config()
-        self.urlscan_api_key = self._load_api_key()
+        self.urlscan_api_key = self._load_api_key("URLSCAN_API_KEY")
+        self.silentpush_api_key = self._load_api_key("SILENTPUSH_API_KEY")
         
         # Initialize API clients
         self.urlscan_client = UrlscanClient(api_key=self.urlscan_api_key)
-        # NOTE: Silent Push API key handling will need to be implemented in the future
-        self.silentpush_client = SilentPushClient(api_key=None)
+        self.silentpush_client = SilentPushClient(api_key=self.silentpush_api_key)
         
         self.output_dir = Path(self.config.get("output_directory", "output"))
         self.output_dir.mkdir(exist_ok=True)
@@ -47,22 +48,15 @@ class MasqMonitor:
             print(f"Error parsing the config file at {self.config_path}.")
             exit(1)
 
-    def _load_api_key(self):
+    def _load_api_key(self, key_name):
         """Load API key from environment variables."""
         # Get the API key from environment variables
-        api_key = os.getenv('URLSCAN_API_KEY')
+        api_key = os.getenv(key_name)
         if not api_key:
-            # Check if API key exists in config for backward compatibility
-            legacy_api_key = self.config.get("api_key", "")
-            if legacy_api_key:
-                print("Using API key from config.json.")
-                print("Consider moving your API key to a .env file for better security and sharing capabilities.")
-                return legacy_api_key
-            else:
-                print("No API key found in environment variables.")
-                print("Please create a .env file with URLSCAN_API_KEY.")
-                print("You can continue without an API key, but some features may be limited.")
-                return ""
+            print(f"No API key found in environment variables for {key_name}.")
+            print(f"Please create a .env file with {key_name}.")
+            print("You can continue without an API key, but some features may be limited.")
+            return ""
         return api_key
 
     def _save_config(self):
@@ -524,59 +518,254 @@ class MasqMonitor:
                             
         return highest_level
 
-    def _generate_html_report(self, results, query_name, output_dir, tlp_level="clear", timestamp=None, debug=False):
-        """Generate an HTML report from the results."""
-        # Get query data including metadata
-        query_data = self.config["queries"].get(query_name, {})
+    def _generate_html_report(self, results, query_name, output_dir, report_tlp="amber", timestamp=None):
+        """Generate an HTML report from the results.
         
-        # Check if query has a specific template path
-        template_path = query_data.get("template_path")
+        Args:
+            results: List of results from the query
+            query_name: Name of the query
+            output_dir: Directory to save the report
+            report_tlp: TLP level for the report
+            timestamp: Timestamp for the report
+        """
+        # Define run_dir from output_dir to fix the undefined run_dir error
+        run_dir = output_dir
         
-        # If no query-specific template, use the global default
-        if not template_path:
-            template_path = self.config.get("default_template_path", "templates/report_template.html")
-            
-        # Split template path into directory and filename
-        template_dir = os.path.dirname(template_path)
-        template_file = os.path.basename(template_path)
+        # Get query details
+        query_config = self.config["queries"].get(query_name, {})
+        query_string = query_config.get("query", "Unknown")
         
-        # Create Jinja2 environment with the appropriate template directory
-        env = Environment(loader=FileSystemLoader(template_dir if template_dir else "templates"))
-        try:
-            template = env.get_template(template_file)
-        except Exception as e:
-            print(f"Error loading template {template_path}: {e}")
-            print("Falling back to default template")
-            env = Environment(loader=FileSystemLoader("templates"))
-            template = env.get_template("report_template.html")
+        # Process TLP levels for each component
+        description = query_config.get("description", "")
+        description_tlp = query_config.get("description_tlp_level", report_tlp)
         
+        query_tlp = query_config.get("query_tlp_level", report_tlp)
+        
+        default_tlp = query_config.get("default_tlp_level", report_tlp)
+        
+        # Handle titles with TLP levels
+        titles = query_config.get("titles", [{"title": f"Masquerade Monitor Report - {query_name}", "tlp_level": report_tlp}])
+        filtered_titles = [item for item in titles if self._is_tlp_visible(item.get("tlp_level", default_tlp), report_tlp)]
+        
+        # Use the first visible title as the main title
+        title = filtered_titles[0]["title"] if filtered_titles else f"Masquerade Monitor Report - {query_name}"
+        
+        # Filter notes based on TLP level
+        all_notes = query_config.get("notes", [])
+        if isinstance(all_notes, list):
+            notes = [note["text"] for note in all_notes 
+                    if self._is_tlp_visible(note.get("tlp_level", default_tlp), report_tlp)]
+        else:
+            # Handle legacy string format
+            notes = [all_notes] if self._is_tlp_visible(default_tlp, report_tlp) else []
+        
+        # Filter references based on TLP level
+        all_references = query_config.get("references", [])
+        if isinstance(all_references, list):
+            references = [ref["url"] for ref in all_references 
+                        if self._is_tlp_visible(ref.get("tlp_level", default_tlp), report_tlp)]
+        else:
+            # Handle legacy string format
+            references = [all_references] if self._is_tlp_visible(default_tlp, report_tlp) else []
+        
+        frequency = query_config.get("frequency", "N/A")
+        frequency_tlp = query_config.get("frequency_tlp_level", default_tlp)
+        
+        priority = query_config.get("priority", "N/A")
+        priority_tlp = query_config.get("priority_tlp_level", default_tlp)
+        
+        # Filter tags based on TLP level
+        tags = query_config.get("tags", [])
+        tags_tlp = query_config.get("tags_tlp_level", default_tlp)
+        
+        # Prepare template data
+        template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+        template_env = jinja2.Environment(loader=template_loader)
+        template = template_env.get_template("report_template.html")
+        
+        # Determine platform from query config
+        platform = query_config.get("platform", "urlscan").lower()
+        
+        # Process results based on the platform type
+        processed_results = []
+        if platform == "silentpush":
+            # For SilentPush responses, we need special handling
+            # Check if this is a raw SilentPush API response with the standard structure
+            if isinstance(results, dict) and "response" in results:
+                response_obj = results["response"]
+                
+                # Check if this contains WHOIS data in the nested structure
+                if (isinstance(response_obj, dict) and 
+                    "response" in response_obj and 
+                    isinstance(response_obj["response"], dict) and 
+                    "scandata_raw" in response_obj["response"]):
+                    
+                    # Extract WHOIS records from the nested structure
+                    whois_records = response_obj["response"]["scandata_raw"]
+                    
+                    if isinstance(whois_records, list):
+                        # Process each WHOIS record
+                        for record in whois_records:
+                            if isinstance(record, dict):
+                                processed_result = {
+                                    "data_type": "whois",
+                                    "domain": record.get("domain", "N/A"),
+                                    "registrar": record.get("registrar", "N/A"),
+                                    "created": record.get("created", "N/A"),
+                                    "updated": record.get("updated", "N/A"),
+                                    "expires": record.get("expires", "N/A"),
+                                    "name": record.get("name", "N/A"),
+                                    "email": ", ".join(record.get("email", [])) if isinstance(record.get("email"), list) else record.get("email", "N/A"),
+                                    "organization": record.get("organization", "N/A") if record.get("organization") != "None" else "N/A",
+                                    "nameserver": ", ".join(record.get("nameserver", [])) if isinstance(record.get("nameserver"), list) else record.get("nameserver", "N/A"),
+                                    "address": record.get("address", "N/A"),
+                                    "city": record.get("city", "N/A"),
+                                    "state": record.get("state", "N/A"),
+                                    "country": record.get("country", "N/A"),
+                                    "zipcode": record.get("zipcode", "N/A"),
+                                    "scan_date": record.get("scan_date", "N/A")
+                                }
+                                processed_results.append(processed_result)
+                        
+                        if not processed_results:
+                            # No valid records found in the expected structure
+                            processed_results.append({
+                                "data_type": "message",
+                                "message": "No WHOIS records found in the SilentPush response."
+                            })
+                    else:
+                        # Couldn't find valid WHOIS data list in the expected structure
+                        processed_results.append({
+                            "data_type": "message",
+                            "message": "SilentPush response doesn't contain a valid list of WHOIS records."
+                        })
+                else:
+                    # This doesn't appear to be a standard WHOIS response structure
+                    processed_results.append({
+                        "data_type": "message",
+                        "message": "SilentPush response doesn't contain the expected WHOIS data structure."
+                    })
+            elif isinstance(results, list):
+                # Process individual SilentPush results (direct format)
+                for result in results:
+                    # For WHOIS data, create a structure compatible with the template
+                    if isinstance(result, dict) and "domain" in result:  # This is WHOIS data
+                        processed_result = {
+                            "data_type": "whois",
+                            "domain": result.get("domain", "N/A"),
+                            "registrar": result.get("registrar", "N/A"),
+                            "created": result.get("created", "N/A"),
+                            "updated": result.get("updated", "N/A"),
+                            "expires": result.get("expires", "N/A"),
+                            "name": result.get("name", "N/A"),
+                            "email": ", ".join(result.get("email", [])) if isinstance(result.get("email"), list) else result.get("email", "N/A"),
+                            "organization": result.get("organization", "N/A") if result.get("organization") != "None" else "N/A",
+                            "nameserver": ", ".join(result.get("nameserver", [])) if isinstance(result.get("nameserver"), list) else result.get("nameserver", "N/A"),
+                            "address": result.get("address", "N/A"),
+                            "city": result.get("city", "N/A"),
+                            "state": result.get("state", "N/A"),
+                            "country": result.get("country", "N/A"),
+                            "zipcode": result.get("zipcode", "N/A"),
+                            "scan_date": result.get("scan_date", "N/A")
+                        }
+                        processed_results.append(processed_result)
+                    else:
+                        # Generic handling for other SilentPush data types
+                        processed_results.append({
+                            "data_type": "generic",
+                            "raw_data": json.dumps(result, indent=2)
+                        })
+            else:
+                # Unrecognized format
+                processed_results.append({
+                    "data_type": "message",
+                    "message": "Unrecognized SilentPush data format."
+                })
+        else:
+            # Process URLScan results (default)
+            for result in results:
+                # Defang URLs and domains if available
+                if "page" in result and "url" in result["page"]:
+                    result["defanged_url"] = self._defang_url(result["page"]["url"])
+                if "page" in result and "domain" in result["page"]:
+                    result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
+                    
+                # Handle screenshots if available in the cached results
+                if "task" in result and "uuid" in result["task"]:
+                    uuid = result["task"]["uuid"]
+                    result["local_screenshot"] = f"images/{uuid}.png"
+                
+                processed_results.append(result)
+
         # Use the provided timestamp or generate current time
-        if timestamp is None:
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Get query details
+        query_config = self.config["queries"].get(query_name, {})
         
+        # Process TLP levels for each component
+        description = query_config.get("description", "")
+        
+        # Handle titles with TLP levels
+        titles = query_config.get("titles", [{"title": f"Masquerade Monitor Report - {query_name}", "tlp_level": report_tlp}])
+        filtered_titles = [item for item in titles if self._is_tlp_visible(item.get("tlp_level", report_tlp), report_tlp)]
+        
+        # Use the first visible title as the main title
+        title = filtered_titles[0]["title"] if filtered_titles else f"Masquerade Monitor Report - {query_name}"
+        
+        # Filter notes based on TLP level
+        all_notes = query_config.get("notes", [])
+        if isinstance(all_notes, list):
+            notes = [note["text"] for note in all_notes 
+                    if self._is_tlp_visible(note.get("tlp_level", report_tlp), report_tlp)]
+        else:
+            # Handle legacy string format
+            notes = [all_notes] if self._is_tlp_visible(report_tlp, report_tlp) else []
+        
+        # Filter references based on TLP level
+        all_references = query_config.get("references", [])
+        if isinstance(all_references, list):
+            references = [ref["url"] for ref in all_references 
+                        if self._is_tlp_visible(ref.get("tlp_level", report_tlp), report_tlp)]
+        else:
+            # Handle legacy string format
+            references = [all_references] if self._is_tlp_visible(report_tlp, report_tlp) else []
+        
+        # Prepare template data
+        template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+        template_env = jinja2.Environment(loader=template_loader)
+        template = template_env.get_template("report_template.html")
+
+        # Render the HTML report
         html_content = template.render(
             query_name=query_name,
-            query_data=query_data,
-            timestamp=timestamp,
-            results=results,
+            query_data=query_config,
+            timestamp=current_timestamp,
+            results=processed_results,
             username=self.config.get("report_username", ""),
-            tlp_level=tlp_level,
-            debug=debug
+            tlp_level=report_tlp,
+            platform=platform,
+            debug=False
         )
         
         # Remove blank lines from HTML content
         html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
         
         # Extract the date/time group from the output directory
-        dir_name = output_dir.name
+        dir_name = run_dir.name
         datetime_part = ""
         if "_" in dir_name:
             datetime_part = dir_name.split("_", 1)[1]
         
         # Include TLP level and datetime in the filename
-        report_filename = f"report_{query_name}_{datetime_part}_TLP-{tlp_level}.html"
-        with open(output_dir / report_filename, 'w', encoding='utf-8') as f:
+        report_filename = f"report_{query_name}_{datetime_part}_TLP-{report_tlp}.html"
+        report_path = run_dir / report_filename
+        
+        with open(report_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
+            
+        print(f"Test report generated in {run_dir}")
+        return report_path
 
     def save_results(self, query_name, results, timestamp=None, platform=None):
         """Save platform results to a JSON file for testing and caching.
@@ -708,14 +897,13 @@ class MasqMonitor:
             else:
                 print("  Last Run: Never")
 
-    def test_report_generation(self, query_name, cached_results_path, tlp_level=None, debug=False):
+    def test_report_generation(self, query_name, cached_results_path, tlp_level=None):
         """Generate a test report using saved results without querying APIs.
         
         Args:
             query_name: Name of the query for metadata
             cached_results_path: Path to JSON file with saved platform results
             tlp_level: Optional TLP level for the report
-            debug: Whether to include debug information in the report
             
         Returns:
             Path to the generated report
@@ -746,46 +934,212 @@ class MasqMonitor:
         img_dir = run_dir / "images"
         img_dir.mkdir(exist_ok=True)
         
-        # Process the results for display
-        for i, result in enumerate(results):
-            # Defang URLs and domains
-            if "page" in result and "url" in result["page"]:
-                result["defanged_url"] = self._defang_url(result["page"]["url"])
-            if "page" in result and "domain" in result["page"]:
-                result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
+        # Process results based on the platform type
+        processed_results = []
+        if platform == "silentpush":
+            # For SilentPush responses, we need special handling
+            # Check if this is a raw SilentPush API response with the standard structure
+            if isinstance(results, dict) and "response" in results:
+                response_obj = results["response"]
                 
-            # Handle screenshots if available in the cached results
-            if "task" in result and "uuid" in result["task"]:
-                uuid = result["task"]["uuid"]
-                result["local_screenshot"] = f"images/{uuid}.png"
-
-        # Add debug information if requested
-        if debug:
-            print("Adding debug information to the report...")
-            # Add a debug section to show JSON representations of key data
-            debug_info = {
-                "query_data": query_data,
-                "tlp_level": report_tlp,
-                "platform": platform,
-                "references": query_data.get("references", []),
-                "tlp_order": {"clear": 1, "white": 1, "green": 2, "amber": 3, "red": 4}
-            }
-            
+                # Check if this contains WHOIS data in the nested structure
+                if (isinstance(response_obj, dict) and 
+                    "response" in response_obj and 
+                    isinstance(response_obj["response"], dict) and 
+                    "scandata_raw" in response_obj["response"]):
+                    
+                    # Extract WHOIS records from the nested structure
+                    whois_records = response_obj["response"]["scandata_raw"]
+                    
+                    if isinstance(whois_records, list):
+                        # Process each WHOIS record
+                        for record in whois_records:
+                            if isinstance(record, dict):
+                                processed_result = {
+                                    "data_type": "whois",
+                                    "domain": record.get("domain", "N/A"),
+                                    "registrar": record.get("registrar", "N/A"),
+                                    "created": record.get("created", "N/A"),
+                                    "updated": record.get("updated", "N/A"),
+                                    "expires": record.get("expires", "N/A"),
+                                    "name": record.get("name", "N/A"),
+                                    "email": ", ".join(record.get("email", [])) if isinstance(record.get("email"), list) else record.get("email", "N/A"),
+                                    "organization": record.get("organization", "N/A") if record.get("organization") != "None" else "N/A",
+                                    "nameserver": ", ".join(record.get("nameserver", [])) if isinstance(record.get("nameserver"), list) else record.get("nameserver", "N/A"),
+                                    "address": record.get("address", "N/A"),
+                                    "city": record.get("city", "N/A"),
+                                    "state": record.get("state", "N/A"),
+                                    "country": record.get("country", "N/A"),
+                                    "zipcode": record.get("zipcode", "N/A"),
+                                    "scan_date": record.get("scan_date", "N/A")
+                                }
+                                processed_results.append(processed_result)
+                        
+                        if not processed_results:
+                            # No valid records found in the expected structure
+                            processed_results.append({
+                                "data_type": "message",
+                                "message": "No WHOIS records found in the SilentPush response."
+                            })
+                    else:
+                        # Couldn't find valid WHOIS data list in the expected structure
+                        processed_results.append({
+                            "data_type": "message",
+                            "message": "SilentPush response doesn't contain a valid list of WHOIS records."
+                        })
+                else:
+                    # This doesn't appear to be a standard WHOIS response structure
+                    processed_results.append({
+                        "data_type": "message",
+                        "message": "SilentPush response doesn't contain the expected WHOIS data structure."
+                    })
+            elif isinstance(results, list):
+                # Process individual SilentPush results (direct format)
+                for result in results:
+                    # For WHOIS data, create a structure compatible with the template
+                    if isinstance(result, dict) and "domain" in result:  # This is WHOIS data
+                        processed_result = {
+                            "data_type": "whois",
+                            "domain": result.get("domain", "N/A"),
+                            "registrar": result.get("registrar", "N/A"),
+                            "created": result.get("created", "N/A"),
+                            "updated": result.get("updated", "N/A"),
+                            "expires": result.get("expires", "N/A"),
+                            "name": result.get("name", "N/A"),
+                            "email": ", ".join(result.get("email", [])) if isinstance(result.get("email"), list) else result.get("email", "N/A"),
+                            "organization": result.get("organization", "N/A") if result.get("organization") != "None" else "N/A",
+                            "nameserver": ", ".join(result.get("nameserver", [])) if isinstance(result.get("nameserver"), list) else result.get("nameserver", "N/A"),
+                            "address": result.get("address", "N/A"),
+                            "city": result.get("city", "N/A"),
+                            "state": result.get("state", "N/A"),
+                            "country": result.get("country", "N/A"),
+                            "zipcode": result.get("zipcode", "N/A"),
+                            "scan_date": result.get("scan_date", "N/A")
+                        }
+                        processed_results.append(processed_result)
+                    else:
+                        # Generic handling for other SilentPush data types
+                        processed_results.append({
+                            "data_type": "generic",
+                            "raw_data": json.dumps(result, indent=2)
+                        })
+            else:
+                # Unrecognized format
+                processed_results.append({
+                    "data_type": "message",
+                    "message": "Unrecognized SilentPush data format."
+                })
+        else:
+            # Process URLScan results (default)
             for result in results:
-                result["debug_info"] = json.dumps(debug_info, indent=2)
+                # Defang URLs and domains if available
+                if "page" in result and "url" in result["page"]:
+                    result["defanged_url"] = self._defang_url(result["page"]["url"])
+                if "page" in result and "domain" in result["page"]:
+                    result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
+                    
+                # Handle screenshots if available in the cached results
+                if "task" in result and "uuid" in result["task"]:
+                    uuid = result["task"]["uuid"]
+                    result["local_screenshot"] = f"images/{uuid}.png"
+                
+                processed_results.append(result)
+ 
+        # Use the provided timestamp or generate current time
+        current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Get query details
+        query_config = self.config["queries"].get(query_name, {})
         
-        # Generate the HTML report
-        report_path = self._generate_html_report(
-            results, 
-            query_name, 
-            run_dir, 
-            report_tlp, 
-            timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            debug=debug
+        # Process TLP levels for each component
+        description = query_config.get("description", "")
+        
+        # Handle titles with TLP levels
+        titles = query_config.get("titles", [{"title": f"Masquerade Monitor Report - {query_name}", "tlp_level": report_tlp}])
+        filtered_titles = [item for item in titles if self._is_tlp_visible(item.get("tlp_level", report_tlp), report_tlp)]
+        
+        # Use the first visible title as the main title
+        title = filtered_titles[0]["title"] if filtered_titles else f"Masquerade Monitor Report - {query_name}"
+        
+        # Filter notes based on TLP level
+        all_notes = query_config.get("notes", [])
+        if isinstance(all_notes, list):
+            notes = [note["text"] for note in all_notes 
+                    if self._is_tlp_visible(note.get("tlp_level", report_tlp), report_tlp)]
+        else:
+            # Handle legacy string format
+            notes = [all_notes] if self._is_tlp_visible(report_tlp, report_tlp) else []
+        
+        # Filter references based on TLP level
+        all_references = query_config.get("references", [])
+        if isinstance(all_references, list):
+            references = [ref["url"] for ref in all_references 
+                        if self._is_tlp_visible(ref.get("tlp_level", report_tlp), report_tlp)]
+        else:
+            # Handle legacy string format
+            references = [all_references] if self._is_tlp_visible(report_tlp, report_tlp) else []
+        
+        # Prepare template data
+        template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+        template_env = jinja2.Environment(loader=template_loader)
+        template = template_env.get_template("report_template.html")
+
+        # Render the HTML report
+        html_content = template.render(
+            query_name=query_name,
+            query_data=query_config,
+            timestamp=current_timestamp,
+            results=processed_results,
+            username=self.config.get("report_username", ""),
+            tlp_level=report_tlp,
+            platform=platform,
+            debug=False
         )
         
+        # Remove blank lines from HTML content
+        html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
+        
+        # Extract the date/time group from the output directory
+        dir_name = run_dir.name
+        datetime_part = ""
+        if "_" in dir_name:
+            datetime_part = dir_name.split("_", 1)[1]
+        
+        # Include TLP level and datetime in the filename
+        report_filename = f"report_{query_name}_{datetime_part}_TLP-{report_tlp}.html"
+        report_path = run_dir / report_filename
+        
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+            
         print(f"Test report generated in {run_dir}")
         return report_path
+
+    
+    def _is_tlp_visible(self, item_tlp, report_tlp):
+        """
+        Determine if an item with a specific TLP level should be visible in a report with another TLP level.
+        
+        Args:
+            item_tlp: TLP level of the item being checked
+            report_tlp: TLP level of the report
+        
+        Returns:
+            bool: True if the item should be visible, False otherwise
+        """
+        # Define TLP hierarchy
+        tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4}
+        
+        # Convert to lowercase for consistency
+        item_tlp = item_tlp.lower() if item_tlp else 'clear'
+        report_tlp = report_tlp.lower() if report_tlp else 'clear'
+        
+        # Get numeric values from the hierarchy
+        item_level = tlp_order.get(item_tlp, 1)
+        report_level = tlp_order.get(report_tlp, 4)
+        
+        # An item is visible if its TLP level is less than or equal to the report TLP level
+        return item_level <= report_level
 
 def main():
     parser = argparse.ArgumentParser(description="Monitor for masquerades using multiple platforms")
@@ -804,8 +1158,6 @@ def main():
                         help="Save results to a JSON file for testing")
     parser.add_argument("--cached-results", 
                         help="Path to a JSON file with saved results")
-    parser.add_argument("--debug", action="store_true", 
-                        help="Include debug information in reports")
     
     args = parser.parse_args()
     
@@ -818,7 +1170,7 @@ def main():
         monitor.list_queries()
     elif args.query and args.cached_results:
         # Generate test report using cached results
-        monitor.test_report_generation(args.query, args.cached_results, tlp_level=args.tlp, debug=args.debug)
+        monitor.test_report_generation(args.query, args.cached_results, tlp_level=args.tlp)
     elif args.query:
         # Run query and optionally save the results
         results = monitor.run_query(args.query, days=days, tlp_level=args.tlp)
