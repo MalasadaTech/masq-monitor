@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masquerade Monitor Report - malasadatech-whois-test</title>
+    <style>
+        :root {
+            --background-color: #ffffff;
+            --text-color: #333333;
+            --header-bg: #f5f5f5;
+            --border-color: #dddddd;
+            --hover-color: #f0f0f0;
+            --link-color: #0366d6;
+            --shadow-color: rgba(0,0,0,0.1);
+            --footer-color: #777777;
+            --meta-color: #777777;
+            --card-bg: #ffffff;
+            --metadata-bg: rgba(0,0,0,0.03);
+            --tag-bg: #0366d6;
+            --tag-text: #ffffff;
+            --tlp-clear-bg: #ffffff;
+            --tlp-clear-text: #000000;
+            --tlp-clear-border: #000000;
+            --tlp-green-bg: #e7f6e7;
+            --tlp-green-text: #2e7d32;
+            --tlp-green-border: #2e7d32;
+            --tlp-amber-bg: #fff8e1;
+            --tlp-amber-text: #ff8f00;
+            --tlp-amber-border: #ff8f00;
+            --tlp-red-bg: #ffebee;
+            --tlp-red-text: #c62828;
+            --tlp-red-border: #c62828;
+        }
+        [data-theme="dark"] {
+            --background-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --header-bg: #2d2d2d;
+            --border-color: #444444;
+            --hover-color: #383838;
+            --link-color: #58a6ff;
+            --shadow-color: rgba(0,0,0,0.3);
+            --footer-color: #aaaaaa;
+            --meta-color: #aaaaaa;
+            --card-bg: #2d2d2d;
+            --metadata-bg: rgba(255,255,255,0.05);
+            --tag-bg: #0d50a0;
+            --tag-text: #e0e0e0;
+            --tlp-clear-bg: #1e1e1e;
+            --tlp-clear-text: #e0e0e0;
+            --tlp-clear-border: #e0e0e0;
+            --tlp-green-bg: #2e7d32;
+            --tlp-green-text: #e7f6e7;
+            --tlp-green-border: #e7f6e7;
+            --tlp-amber-bg: #ff8f00;
+            --tlp-amber-text: #fff8e1;
+            --tlp-amber-border: #fff8e1;
+            --tlp-red-bg: #c62828;
+            --tlp-red-text: #ffebee;
+            --tlp-red-border: #ffebee;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background-color: var(--header-bg);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        h1, h2, h3 {
+            color: var(--text-color);
+            margin-top: 0;
+        }
+        .meta {
+            color: var(--meta-color);
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        /* Metadata section styling */
+        .metadata-section {
+            background-color: var(--metadata-bg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .metadata-section h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .metadata-item {
+            margin: 8px 0;
+        }
+        .metadata-label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .tag {
+            display: inline-block;
+            background-color: var(--tag-bg);
+            color: var(--tag-text);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 6px;
+            margin-bottom: 4px;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .result-card {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            background-color: var(--card-bg);
+        }
+        .thumbnail {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .thumbnail:hover {
+            opacity: 0.8;
+        }
+        .result-info dt {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .result-info dd {
+            margin-left: 0;
+            margin-bottom: 5px;
+        }
+        .url {
+            word-break: break-all;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.8em;
+            color: var(--footer-color);
+            text-align: center;
+        }
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        /* Theme toggle styling */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .settings-cog {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+        .theme-toggle-panel {
+            display: none;
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            position: absolute;
+            right: 0;
+            top: 30px;
+            align-items: center;
+            gap: 8px;
+        }
+        .theme-toggle label {
+            cursor: pointer;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            background-color: #ccc;
+            border-radius: 12px;
+            position: relative;
+        }
+        .theme-toggle label::after {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: white;
+            top: 3px;
+            left: 3px;
+            transition: 0.3s;
+        }
+        .theme-toggle input {
+            display: none;
+        }
+        .theme-toggle input:checked + label {
+            background-color: #6b6b6b;
+        }
+        .theme-toggle input:checked + label::after {
+            transform: translateX(26px);
+            background-color: #1e1e1e;
+        }
+        .icon {
+            font-size: 1.2rem;
+        }
+        /* Hide theme toggle when printing */
+        @media print {
+            .theme-toggle {
+                display: none !important;
+            }
+            /* Ensure TLP colors are printed */
+            .tlp-clear {
+                background-color: var(--tlp-clear-bg) !important;
+                color: var(--tlp-clear-text) !important;
+                border: 1px solid var(--tlp-clear-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tlp-green {
+                background-color: var(--tlp-green-bg) !important;
+                color: var(--tlp-green-text) !important;
+                border: 1px solid var(--tlp-green-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tlp-amber {
+                background-color: var(--tlp-amber-bg) !important;
+                color: var(--tlp-amber-text) !important;
+                border: 1px solid var(--tlp-amber-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .tlp-red {
+                background-color: var(--tlp-red-bg) !important;
+                color: var(--tlp-red-text) !important;
+                border: 1px solid var(--tlp-red-border) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .overall-tlp-banner {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .portion-marking {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            /* Preserve dark theme when printing if it was selected */
+            @page {
+                margin: 0.5cm;
+            }
+            body {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            /* Preserve dark theme colors if document had dark theme applied */
+            html[data-theme="dark"] {
+                filter: none !important;
+                background-color: var(--background-color) !important;
+                color: var(--text-color) !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            html[data-theme="dark"] body,
+            html[data-theme="dark"] .container,
+            html[data-theme="dark"] header,
+            html[data-theme="dark"] main,
+            html[data-theme="dark"] .metadata-section,
+            html[data-theme="dark"] .result-card,
+            html[data-theme="dark"] .footer {
+                background-color: var(--background-color) !important;
+                color: var(--text-color) !important;
+                border-color: var(--border-color) !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+        }
+        /* TLP styling */
+        .tlp {
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+        .tlp-clear {
+            background-color: var(--tlp-clear-bg);
+            color: var(--tlp-clear-text);
+            border: 1px solid var(--tlp-clear-border);
+        }
+        .tlp-green {
+            background-color: var(--tlp-green-bg);
+            color: var(--tlp-green-text);
+            border: 1px solid var(--tlp-green-border);
+        }
+        .tlp-amber {
+            background-color: var(--tlp-amber-bg);
+            color: var(--tlp-amber-text);
+            border: 1px solid var(--tlp-amber-border);
+        }
+        .tlp-red {
+            background-color: var(--tlp-red-bg);
+            color: var(--tlp-red-text);
+            border: 1px solid var(--tlp-red-border);
+        }
+        .portion-marking {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 2px;
+            margin-right: 10px;
+            display: inline-block;
+        }
+        .overall-tlp-banner {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-bottom: 1px solid var(--border-color);
+        }
+        /* Image Modal for thumbnails */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: auto;
+        }
+        .modal-image {
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+        }
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        .close-modal:hover {
+            background-color: rgba(255, 0, 0, 0.5);
+        }
+        /* Report title styling */
+        .report-title {
+            font-size: 1.2em;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .report-title strong {
+            font-size: 1.25em;
+            font-weight: bold;
+        }
+        .report-title .tlp {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+        }
+        /* Hide modal when printing */
+        @media print {
+            .image-modal {
+                display: none !important;
+            }
+        }
+        /* WHOIS data styling */
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+        .card-header {
+            background-color: var(--header-bg);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .card-header h5 {
+            margin: 0;
+            font-weight: bold;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .text-muted {
+            color: var(--meta-color);
+            font-size: 0.9em;
+        }
+        .mb-0 {
+            margin-bottom: 0 !important;
+        }
+        .mb-3 {
+            margin-bottom: 15px !important;
+        }
+        .mb-4 {
+            margin-bottom: 20px !important;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        .col-md-6 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+        @media (min-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        .list-group {
+            display: flex;
+            flex-direction: column;
+            padding-left: 0;
+            margin-bottom: 0;
+            border-radius: 0.25rem;
+        }
+        .list-group-item {
+            position: relative;
+            display: block;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-top-width: 0;
+        }
+        .list-group-item:first-child {
+            border-top-width: 1px;
+            border-top-left-radius: 0.25rem;
+            border-top-right-radius: 0.25rem;
+        }
+        .list-group-item:last-child {
+            border-bottom-right-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+        .json-content {
+            background-color: var(--metadata-bg);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        /* Query Section Styling */
+        .query-section {
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .query-section h3 {
+            padding: 10px 15px;
+            background-color: var(--header-bg);
+            border-radius: 5px 5px 0 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .query-section-meta {
+            padding: 0 15px;
+            margin-bottom: 15px;
+            color: var(--meta-color);
+        }
+        .query-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="overall-tlp-banner">
+        Overall TLP of this document: <span class="tlp tlp-red">TLP:red</span>
+    </div>
+    <div class="theme-toggle">
+        <span class="settings-cog" id="settings-cog">⚙️</span>
+        <div class="theme-toggle-panel" id="theme-toggle-panel">
+            <span class="icon">🌞</span>
+            <input type="checkbox" id="theme-toggle" />
+            <label for="theme-toggle"></label>
+            <span class="icon">🌙</span>
+        </div>
+    </div>
+    <!-- Image Modal for expanded view -->
+    <div id="imageModal" class="image-modal">
+        <span class="close-modal">&times;</span>
+        <img id="expandedImage" class="modal-image">
+    </div>
+    <div class="container">
+        <header>
+            <h1>Masquerade Monitor Report</h1>
+            <div class="meta">
+                <!-- Display title based on TLP level if available, otherwise fallback to query name -->
+                    <!-- If no exact TLP match, use best available title based on TLP order -->
+                <p class="report-title">
+                            <span class="tlp portion-marking tlp-clear">TLP:clear</span>
+                        <strong>This is a test query to retrieve WHOIS information for the malasada.tech domain</strong>
+                </p>
+                <p>Generated: 2025-04-25 20:26:01</p>
+                <p>Generated by: <strong>MalasadaTech</strong></p>
+                <p>TLP Level: <span class="tlp tlp-red">TLP:red</span></p>
+            </div>
+        </header>
+        <div class="meta">
+                <p>
+                    Testing query for whois information about malasada.tech domain
+                </p>
+                <p>
+                    Search query: <code>datasource = "whois" AND domain = "malasada.tech"</code>
+                </p>
+        </div>
+        <div class="metadata-section">
+            <h3>Query Metadata</h3>
+            <!-- Add query name to metadata section -->
+            <div class="metadata-item">
+                <span class="metadata-label">Query Name:</span> malasadatech-whois-test
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Notes:</span>
+                    This is a test query to retrieve WHOIS information for the malasada.tech domain
+            </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Frequency:</span> 
+                    weekly
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Priority:</span>
+                    medium
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Tags:</span>
+                    <span class="tag">testing</span>
+                    <span class="tag">whois</span>
+                    <span class="tag">malasada</span>
+                </div>
+        </div>
+        <main>
+            <h2>Results (6)</h2>
+                    <!-- Standard single-query report -->
+                    <!-- Platform-specific result display based on data type -->
+                            <!-- WHOIS record display for SilentPush -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: malasada.tech</h5>
+                                    <small class="text-muted">Scan Date: 2025-04-18 01:14:56</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> malasada.tech</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> NETWORK SOLUTIONS, LLC.</li>
+                                                <li class="list-group-item"><strong>Created:</strong> 2024-03-01 20:54:18</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> 2025-02-19 09:42:06</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> 2026-03-01 23:59:59</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> ns1.bluehost.com, ns2.bluehost.com</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> PERFECT PRIVACY, LLC</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> N/A</li>
+                                                <li class="list-group-item"><strong>Email:</strong> domain.operations@web.com, eq78n6ez83a@bluehostprivatename.com</li>
+                                                <li class="list-group-item"><strong>Address:</strong> 5335 Gate Parkway care of Domain Privacy Service FBO Registrant</li>
+                                                <li class="list-group-item"><strong>City:</strong> Jacksonville</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> FL</li>
+                                                <li class="list-group-item"><strong>Country:</strong> US</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> 32256</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- WHOIS record display for SilentPush -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: malasada.tech</h5>
+                                    <small class="text-muted">Scan Date: 2025-02-15 02:07:15</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> malasada.tech</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> FastDomain Inc.</li>
+                                                <li class="list-group-item"><strong>Created:</strong> 2024-03-01 20:54:18</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> 2025-02-14 09:38:19</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> 2026-03-01 23:59:59</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> ns1.bluehost.com, ns2.bluehost.com</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> PERFECT PRIVACY, LLC</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> N/A</li>
+                                                <li class="list-group-item"><strong>Email:</strong> domain.operations@web.com, eq78n6ez83a@bluehostprivatename.com</li>
+                                                <li class="list-group-item"><strong>Address:</strong> 5335 Gate Parkway care of Domain Privacy Service FBO Registrant</li>
+                                                <li class="list-group-item"><strong>City:</strong> Jacksonville</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> FL</li>
+                                                <li class="list-group-item"><strong>Country:</strong> US</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> 32256</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- WHOIS record display for SilentPush -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: malasada.tech</h5>
+                                    <small class="text-muted">Scan Date: 2024-12-16 02:06:07</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> malasada.tech</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> FastDomain Inc.</li>
+                                                <li class="list-group-item"><strong>Created:</strong> 2024-03-01 20:54:18</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> 2024-03-06 21:02:05</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> 2025-03-01 23:59:59</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> ns1.bluehost.com, ns2.bluehost.com</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> PERFECT PRIVACY, LLC</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> N/A</li>
+                                                <li class="list-group-item"><strong>Email:</strong> domain.operations@web.com, eq78n6ez83a@bluehostprivatename.com</li>
+                                                <li class="list-group-item"><strong>Address:</strong> 5335 Gate Parkway care of Domain Privacy Service FBO Registrant</li>
+                                                <li class="list-group-item"><strong>City:</strong> Jacksonville</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> FL</li>
+                                                <li class="list-group-item"><strong>Country:</strong> US</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> 32256</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- WHOIS record display for SilentPush -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: malasada.tech</h5>
+                                    <small class="text-muted">Scan Date: 2024-10-15 08:02:12</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> malasada.tech</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> FastDomain Inc.</li>
+                                                <li class="list-group-item"><strong>Created:</strong> 2024-03-01 20:54:18</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> 2024-03-06 21:02:05</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> 2025-03-01 23:59:59</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> ns1.bluehost.com, ns2.bluehost.com</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> PERFECT PRIVACY, LLC</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> N/A</li>
+                                                <li class="list-group-item"><strong>Email:</strong> domain.operations@web.com, eq78n6ez83a@bluehostprivatename.com</li>
+                                                <li class="list-group-item"><strong>Address:</strong> 5335 Gate Parkway care of Domain Privacy Service FBO Registrant</li>
+                                                <li class="list-group-item"><strong>City:</strong> Jacksonville</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> FL</li>
+                                                <li class="list-group-item"><strong>Country:</strong> US</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> 32256</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- WHOIS record display for SilentPush -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: malasada.tech</h5>
+                                    <small class="text-muted">Scan Date: 2024-09-01 01:07:16</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> malasada.tech</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> FastDomain Inc.</li>
+                                                <li class="list-group-item"><strong>Created:</strong> 2024-03-01 20:54:18</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> 2024-03-06 21:02:05</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> 2025-03-01 23:59:59</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> ns1.bluehost.com, ns2.bluehost.com</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> PERFECT PRIVACY, LLC</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> N/A</li>
+                                                <li class="list-group-item"><strong>Email:</strong> domain.operations@web.com, eq78n6ez83a@bluehostprivatename.com</li>
+                                                <li class="list-group-item"><strong>Address:</strong> 5335 Gate Parkway care of Domain Privacy Service FBO Registrant</li>
+                                                <li class="list-group-item"><strong>City:</strong> Jacksonville</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> FL</li>
+                                                <li class="list-group-item"><strong>Country:</strong> US</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> 32256</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- WHOIS record display for SilentPush -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">WHOIS Information for: malasada.tech</h5>
+                                    <small class="text-muted">Scan Date: 2024-07-02 01:11:06</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Domain Information</h6>
+                                            <ul class="list-group mb-3">
+                                                <li class="list-group-item"><strong>Domain:</strong> malasada.tech</li>
+                                                <li class="list-group-item"><strong>Registrar:</strong> FastDomain Inc.</li>
+                                                <li class="list-group-item"><strong>Created:</strong> 2024-03-01 20:54:18</li>
+                                                <li class="list-group-item"><strong>Updated:</strong> 2024-03-06 21:02:05</li>
+                                                <li class="list-group-item"><strong>Expires:</strong> 2025-03-01 23:59:59</li>
+                                                <li class="list-group-item"><strong>Nameservers:</strong> ns1.bluehost.com, ns2.bluehost.com</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Registrant Information</h6>
+                                            <ul class="list-group">
+                                                <li class="list-group-item"><strong>Name:</strong> PERFECT PRIVACY, LLC</li>
+                                                <li class="list-group-item"><strong>Organization:</strong> N/A</li>
+                                                <li class="list-group-item"><strong>Email:</strong> domain.operations@web.com, eq78n6ez83a@bluehostprivatename.com</li>
+                                                <li class="list-group-item"><strong>Address:</strong> 5335 Gate Parkway care of Domain Privacy Service FBO Registrant</li>
+                                                <li class="list-group-item"><strong>City:</strong> Jacksonville</li>
+                                                <li class="list-group-item"><strong>State/Province:</strong> FL</li>
+                                                <li class="list-group-item"><strong>Country:</strong> US</li>
+                                                <li class="list-group-item"><strong>Postal Code:</strong> 32256</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        </main>
+        <div class="footer">
+            <p>Overall TLP of this document: <span class="tlp tlp-red">TLP:red</span></p>
+            <p>Generated with Masquerade Monitor on 2025-04-25 20:26:01</p>
+            <p>
+                <a href="https://github.com/MalasadaTech/masq-monitor/" target="_blank">GitHub Project</a> | 
+                by <a href="https://x.com/MalasadaTech" target="_blank">MalasadaTech</a>
+            </p>
+        </div>
+    </div>
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const settingsCog = document.getElementById('settings-cog');
+        const themePanel = document.getElementById('theme-toggle-panel');
+        // Check for saved theme preference or use system preference
+        const savedTheme = localStorage.getItem('theme') || 
+            (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        // Set initial theme
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            themeToggle.checked = true;
+        }
+        // Add event listener for theme switch
+        themeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        // Toggle settings panel with cog icon
+        settingsCog.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (themePanel.style.display === 'flex') {
+                themePanel.style.display = 'none';
+            } else {
+                themePanel.style.display = 'flex';
+            }
+        });
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            if (themePanel.style.display === 'flex' && 
+                !themePanel.contains(e.target) && 
+                e.target !== settingsCog) {
+                themePanel.style.display = 'none';
+            }
+        });
+        // Close panel with escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && themePanel.style.display === 'flex') {
+                themePanel.style.display = 'none';
+            }
+        });
+        // Image modal functionality
+        const imageModal = document.getElementById('imageModal');
+        const expandedImage = document.getElementById('expandedImage');
+        const closeModal = document.querySelector('.close-modal');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        // Add click event to all thumbnail images
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                imageModal.style.display = 'flex';
+                expandedImage.src = this.src;
+                expandedImage.alt = this.alt;
+                document.body.style.overflow = 'hidden'; // Prevent scrolling while modal is open
+            });
+        });
+        // Close modal when clicking the X button
+        closeModal.addEventListener('click', function() {
+            imageModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        });
+        // Close modal when clicking anywhere on the background
+        imageModal.addEventListener('click', function(e) {
+            if (e.target === imageModal) {
+                imageModal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Restore scrolling
+            }
+        });
+        // Close modal with escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // First check if theme panel is
+                if (themePanel.style.display === 'flex') {
+                    themePanel.style.display = 'none';
+                }
+                // Then check if image modal is open and close that
+                else if (imageModal.style.display === 'flex') {
+                    imageModal.style.display = 'none';
+                    document.body.style.overflow = 'auto'; // Restore scrolling
+                }
+            }
+        });
+    </script>
+</body>
+</html>
