@@ -14,7 +14,7 @@ It currently supports urlscan.io requests with plans to expand to other sources 
 ## Features
 
 - Queries search platforms for potential masquerade websites (BYO-Queries)
-- Multiple platform support (urlscan.io, with Silent Push API coming soon)
+- Multiple platform support (urlscan.io, with Silent Push API coming soonly as of 25APR2025)
 - Modular architecture with platform-specific client modules
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots

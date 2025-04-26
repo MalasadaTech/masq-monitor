@@ -2,7 +2,10 @@
 
 import requests
 import base64
+import json
+import datetime
 from pathlib import Path
+from datetime import datetime
 
 class SilentPushClient:
     """Client for interacting with the Silent Push API."""
@@ -14,6 +17,97 @@ class SilentPushClient:
             api_key: Optional. The API key for Silent Push API
         """
         self.api_key = api_key
+        self.base_url = "https://api.silentpush.com/api/v1"
+        # Set default timeout values (connect_timeout, read_timeout) in seconds
+        self.connect_timeout = 30  # 30 seconds for connection
+        self.read_timeout = 120    # 2 minutes to read data
+        
+        if not self.api_key:
+            print("Warning: No SilentPush API key provided. API access will be limited.")
+    
+    def set_timeouts(self, connect_timeout=None, read_timeout=None):
+        """Set custom timeout values for API requests.
+        
+        Args:
+            connect_timeout: Timeout for establishing connection (in seconds)
+            read_timeout: Timeout for reading data (in seconds)
+        """
+        if connect_timeout is not None:
+            self.connect_timeout = connect_timeout
+        
+        if read_timeout is not None:
+            self.read_timeout = read_timeout
+            
+        print(f"SilentPush timeouts set to: connect={self.connect_timeout}s, read={self.read_timeout}s")
+    
+    def prepare_query(self, query):
+        """Prepare query string, handling special cases like dates.
+        
+        Args:
+            query: Original query string
+            
+        Returns:
+            Properly formatted query string
+        """
+        # Process the query to ensure proper date formatting
+        # SilentPush format for date queries: scan_date >= "YYYY-MM-DD HH:MM:SS"
+        
+        # Check for potential date formatting issues
+        if "date:" in query:
+            # This appears to be the wrong format - replace with proper scan_date syntax
+            query = query.replace("date:", "scan_date ")
+        
+        # If a date is specified without quotes, add them
+        # This regex would match patterns like: scan_date >= 2025-02-15
+        import re
+        date_pattern = r'scan_date\s*(?:[<>=!]+)\s*([0-9]{4}-[0-9]{2}-[0-9]{2}(?:\s+[0-9]{2}:[0-9]{2}:[0-9]{2})?)'
+        
+        def add_quotes_to_date(match):
+            date_str = match.group(1)
+            # If this is just a date without time, add " 00:00:00"
+            if len(date_str) == 10:  # YYYY-MM-DD format
+                date_str = f"{date_str} 00:00:00"
+            return f'scan_date{match.group(0)[9:match.start(1) - match.start(0)]}"{date_str}"'
+        
+        query = re.sub(date_pattern, add_quotes_to_date, query)
+        
+        return query
+    
+    def save_raw_response(self, query, response_data, error=None):
+        """Save the raw API response to a file for troubleshooting.
+        
+        Args:
+            query: The original query string
+            response_data: The raw response data from the API
+            error: Optional error message or exception
+            
+        Returns:
+            Path to the saved file
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        cache_dir = Path("cached_results")
+        cache_dir.mkdir(exist_ok=True)
+        
+        # Create a timestamped filename for the raw response
+        filename = f"silentpush_raw_response_{timestamp}.json"
+        filepath = cache_dir / filename
+        
+        # Create a data structure with query and response information
+        debug_data = {
+            "timestamp": datetime.now().isoformat(),
+            "query": query,
+            "response": response_data
+        }
+        
+        if error:
+            debug_data["error"] = str(error)
+        
+        # Save the data to a JSON file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(debug_data, f, indent=2)
+        
+        print(f"Raw API response saved to {filepath}")
+        return filepath
         
     def execute_query(self, query):
         """Execute a query against the Silent Push API.
@@ -24,10 +118,196 @@ class SilentPushClient:
         Returns:
             List of results from the query
         """
-        # This is a placeholder for Silent Push API implementation
-        print(f"Silent Push API integration not yet implemented. Query: {query}")
-        return []
-
+        if not self.api_key:
+            print("Error: SilentPush API key is required to execute queries.")
+            return []
+        
+        # Preprocess the query to handle date formats correctly
+        formatted_query = self.prepare_query(query)
+        if formatted_query != query:
+            print(f"Query reformatted for SilentPush compatibility: {formatted_query}")
+        
+        # Set up the API endpoint for the merge-api search/raw endpoint
+        endpoint = f"{self.base_url}/merge-api/explore/scandata/search/raw"
+        
+        # Set up the headers with API key authentication
+        headers = {
+            "x-api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
+        
+        # Set up the request payload according to the API documentation format
+        # {"query": "<query>", "fields":["<field1>","<field2>",...,"<fieldn>"], "sort": ["<field1>/<order>","<field2>/<order>",...,"<fieldn>/<order>"]}
+        payload = {
+            "query": formatted_query,  # The SPQL query as a single string in JSON format
+            # Uncomment and customize if you want specific fields
+            # "fields": ["domain", "scan_date", "registrar", "name", "email", "organization"],
+            "sort": ["scan_date/desc"]  # Sort by scan_date in descending order
+        }
+        
+        # Define parameters for the API request
+        params = {
+            "limit": 1000,  # Maximum number of results to return
+            "skip": 0,
+            "with_metadata": 1  # Return metadata about the search
+        }
+        
+        try:
+            print(f"Executing SilentPush query: {formatted_query}")
+            print(f"Using timeouts: connect={self.connect_timeout}s, read={self.read_timeout}s")
+            
+            # Include explicit timeout values
+            timeout = (self.connect_timeout, self.read_timeout)  # (connect_timeout, read_timeout)
+            
+            # Create a prepared request to inspect before sending
+            prepared_request = requests.Request(
+                'POST', 
+                endpoint,
+                headers=headers,
+                json=payload,
+                params=params
+            ).prepare()
+            
+            # Print the request details for debugging
+            print("\n=== PREPARED REQUEST DETAILS ===")
+            print(f"URL: {prepared_request.url}")
+            print("Headers:")
+            for header, value in prepared_request.headers.items():
+                # Hide the actual API key for security
+                if header.lower() == 'x-api-key':
+                    print(f"  {header}: {'*' * 10}")
+                else:
+                    print(f"  {header}: {value}")
+            
+            # Parse body back to JSON for pretty printing
+            print("Body:")
+            try:
+                body_json = json.loads(prepared_request.body.decode('utf-8'))
+                print(json.dumps(body_json, indent=2))
+            except:
+                print(f"  {prepared_request.body}")
+            print("=== END OF REQUEST DETAILS ===\n")
+            
+            # Send the actual request
+            response = requests.post(
+                endpoint, 
+                headers=headers, 
+                json=payload, 
+                params=params,
+                timeout=timeout  # Apply the timeouts
+            )
+            
+            # Always save the raw response for debugging
+            try:
+                response_data = response.json() if response.text else {"empty_response": True}
+                print("\n=== RESPONSE DETAILS ===")
+                print(f"Status Code: {response.status_code}")
+                print(f"Response Headers: {dict(response.headers)}")
+                print("Response Body (truncated):")
+                print(f"{json.dumps(response_data)[:1000]}..." if len(json.dumps(response_data)) > 1000 else json.dumps(response_data))
+                print("=== END OF RESPONSE DETAILS ===\n")
+            except json.JSONDecodeError:
+                response_data = {"text": response.text, "not_json": True}
+                print("\n=== RESPONSE DETAILS ===")
+                print(f"Status Code: {response.status_code}")
+                print(f"Response Headers: {dict(response.headers)}")
+                print("Response Body (non-JSON, truncated):")
+                print(f"{response.text[:1000]}..." if len(response.text) > 1000 else response.text)
+                print("=== END OF RESPONSE DETAILS ===\n")
+                
+            self.save_raw_response(formatted_query, response_data)
+            
+            if response.status_code == 200:
+                # Special handling for the nested response structure
+                if "response" in response_data and isinstance(response_data["response"], dict):
+                    response_obj = response_data["response"]
+                    
+                    # Check for scandata_raw in the response object
+                    if "scandata_raw" in response_obj:
+                        results = response_obj["scandata_raw"]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
+                    # Check for error in the response object
+                    elif "error" in response_obj:
+                        error_msg = response_obj.get("error", "Unknown error")
+                        print(f"API returned an error: {error_msg}")
+                        return []
+                
+                # Standard results field check
+                if "results" in response_data:
+                    results = response_data["results"]
+                    print(f"Query executed successfully. Retrieved {len(results)} results.")
+                    return results
+                else:
+                    print(f"Query executed successfully but couldn't find results in the expected format.")
+                    print(f"Response data structure: {self._describe_structure(response_data)}")
+                    return []
+            else:
+                # For non-200 responses, still save what we can
+                self.save_raw_response(formatted_query, response_data, 
+                                     f"HTTP Error: {response.status_code}")
+                print(f"Error executing query: {response.status_code} - {response.text}")
+                return []
+                
+        except requests.exceptions.Timeout as e:
+            # Handle timeout specifically
+            self.save_raw_response(formatted_query, 
+                                  {"exception_occurred": True, "timeout_error": True},
+                                  f"Timeout error: {str(e)} - Consider increasing timeout values.")
+            print(f"Timeout when executing SilentPush query: {str(e)}")
+            print("Consider increasing the timeout values with set_timeouts() method.")
+            return []
+        except requests.exceptions.ConnectionError as e:
+            # Handle connection errors specifically
+            self.save_raw_response(formatted_query, 
+                                  {"exception_occurred": True, "connection_error": True},
+                                  f"Connection error: {str(e)} - Check network connectivity.")
+            print(f"Connection error when executing SilentPush query: {str(e)}")
+            print("Check network connectivity and ensure you can reach api.silentpush.com")
+            return []
+        except Exception as e:
+            # Save information about the exception
+            self.save_raw_response(formatted_query, {"exception_occurred": True}, str(e))
+            print(f"Exception when executing SilentPush query: {str(e)}")
+            return []
+            
+    def _describe_structure(self, data, max_depth=3, current_depth=0):
+        """Describe the structure of a complex JSON response to help with debugging.
+        
+        Args:
+            data: The data structure to describe
+            max_depth: Maximum recursion depth
+            current_depth: Current recursion depth
+            
+        Returns:
+            String description of the data structure
+        """
+        if current_depth >= max_depth:
+            return "... (max depth reached)"
+            
+        if isinstance(data, dict):
+            result = "{"
+            items = []
+            for key, value in data.items():
+                if isinstance(value, (dict, list)):
+                    items.append(f'"{key}": {self._describe_structure(value, max_depth, current_depth + 1)}')
+                else:
+                    items.append(f'"{key}": {type(value).__name__}')
+            result += ", ".join(items)
+            result += "}"
+            return result
+        elif isinstance(data, list):
+            if len(data) == 0:
+                return "[]"
+            else:
+                first_item = data[0]
+                if isinstance(first_item, (dict, list)):
+                    return f"[{self._describe_structure(first_item, max_depth, current_depth + 1)}, ...]"
+                else:
+                    return f"[{type(first_item).__name__}, ...]"
+        else:
+            return type(data).__name__
+    
     def download_screenshot(self, uuid, output_path):
         """Download the screenshot for a specific scan if available.
         
@@ -38,8 +318,13 @@ class SilentPushClient:
         Returns:
             Boolean indicating success or failure
         """
-        # This is a placeholder for Silent Push screenshot download
-        print(f"Silent Push screenshot download not yet implemented for UUID: {uuid}")
+        if not self.api_key:
+            print("Error: SilentPush API key is required to download screenshots.")
+            return False
+        
+        # For WHOIS queries, screenshots are not applicable
+        # This is a placeholder for when we implement other query types
+        print(f"SilentPush screenshot download not applicable for UUID: {uuid} (WHOIS data doesn't have screenshots)")
         return False
             
     def encode_image_to_base64(self, image_path):
