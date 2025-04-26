@@ -9,15 +9,16 @@ Masquerade Monitor can help you track potential phishing campaigns (or other cam
 The basic idea:
 It takes a list of monitoring pivots, and performs API calls to check if there is anything new since the last check.
 
-It currently supports urlscan.io requests with plans to expand to other sources (including Silent Push API) in the future. urlscan.io is used because they allow free API searches that should suffice for basic monitoring.
+It currently supports urlscan.io requests and the Silent Push API (as of April 2025). urlscan.io is used because they allow free API searches that should suffice for basic monitoring.
 
 ## Features
 
 - Queries search platforms for potential masquerade websites (BYO-Queries)
-- Multiple platform support (urlscan.io, with Silent Push WHOIS scanner as of 25APR2025)
+- Multiple platform support (urlscan.io and Silent Push WHOIS scanner)
 - Modular architecture with platform-specific client modules
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
+- Dedicated report generation module separated from main application logic
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Supports TLP (Traffic Light Protocol) classification for information sharing control
 - Supports query groups for organizing related queries and generating comprehensive reports
