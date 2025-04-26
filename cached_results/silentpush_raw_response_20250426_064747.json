@@ -1,0 +1,632 @@
+{
+  "timestamp": "2025-04-26T06:47:47.658455",
+  "query": "datasource = [\"webscan\"] AND domain = \"malasada.tech\" AND scan_date >= \"2024-02-21T06:47:45Z\"",
+  "response": {
+    "status_code": 200,
+    "error": null,
+    "response": {
+      "metadata": {
+        "job_id": "edb5b258-9c24-4580-8224-66c248a894c2",
+        "query_name": "scandata/search/raw/_spql",
+        "results_returned": 6,
+        "results_total_at_least": 6,
+        "timestamp": 1745686069,
+        "with_metadata": 1
+      },
+      "scandata_raw": [
+        {
+          "HHV": "55c4313e20cfe62771a8621b38",
+          "body_analysis": {
+            "SHV": "ad5f3bedf26e2bb0a30917fec9",
+            "adsense": [],
+            "body_sha256": "eac4e70fa822feb6436b5af2b8277311e0f893e0e42156878f758395cb2de6dd",
+            "footer_sha256": "7cc423ffe1aa4a36b1511b2a23d752c1693b0b705cca258fd185fd71fd8dc462",
+            "google-GA4": [],
+            "google-UA": [],
+            "google-adstag": [],
+            "header_sha256": "d2f0a8e2f31db4283ce9ff9ee37958e1b150b74065ee0c3f47e4dc20f6b18b62",
+            "js_sha256": [],
+            "js_ssdeep": [],
+            "language": [
+              "English"
+            ],
+            "onion": []
+          },
+          "datahash": "3a7a6b03f83e2611841179a1a907f5a22b59375974be9c1ed4bd8f83d0275416",
+          "datasource": "webscan",
+          "domain": "malasada.tech",
+          "favicon2_avg": "fff87c0e019260180703e1fff",
+          "favicon2_md5": "0dcd4e67512eb332a520aeb2adb0ef58",
+          "favicon2_murmur3": -1764958884,
+          "favicon2_path": "https://malasada.tech/wp-content/uploads/2024/03/cropped-Malasada-Tech-3-1-192x192.webp",
+          "favicon_md5": "",
+          "favicon_urls": [
+            "https://malasada.tech/wp-content/uploads/2024/03/cropped-Malasada-Tech-3-1-192x192.webp",
+            "https://malasada.tech/wp-content/uploads/2024/03/cropped-Malasada-Tech-3-1-32x32.webp"
+          ],
+          "file": false,
+          "file_sha256": "",
+          "geoip": {
+            "as_org": "UNIFIEDLAYER-AS-1",
+            "asn": 46606,
+            "continent_code": "NA",
+            "country_code2": "US",
+            "country_code3": "US",
+            "country_name": "United States",
+            "ip": "162.241.252.80",
+            "latitude": 37.751,
+            "location": {
+              "lat": 37.751,
+              "lon": -97.822
+            },
+            "longitude": -97.822,
+            "timezone": "America/Chicago"
+          },
+          "header": {
+            "cache-control": "max-age=7200",
+            "content-encoding": "gzip",
+            "content-type": "text/html; charset=UTF-8",
+            "expires": "Sun, 10 Mar 2024 19:31:51 GMT",
+            "server": "nginx/1.21.6"
+          },
+          "hostname": "malasada.tech",
+          "html_body_murmur3": -564627404,
+          "html_body_sha256": "46c16312d669f1c11849b7db698964569fb3b293047ea9973bd52ab0b2ed1022",
+          "html_body_similarity": 0,
+          "html_body_ssdeep": "1536:bGapy0eQeLCeAfsVT+LM4bHKBWHCkPa8EhG:9w0EL/AfsVT+LM4bHK0TdEhG",
+          "htmltitle": "Malasada Tech - Tech Insights at Your Fingertips: Innovate, Secure, Connect",
+          "ip": "162.241.252.80",
+          "jarm": "29d29d15d29d29d00042d42d000000cd600c085f371f8533aaf66051f8e5b1",
+          "opendirectory": false,
+          "origin_domain": "malasada.tech",
+          "origin_hostname": "malasada.tech",
+          "origin_ip": "162.241.252.80",
+          "origin_path": "",
+          "origin_port": 443,
+          "origin_resolves_to": [
+            "162.241.252.80"
+          ],
+          "origin_scheme": "https",
+          "origin_url": "https://malasada.tech",
+          "path": "",
+          "port": 443,
+          "redirect": false,
+          "redirect_to_https": false,
+          "resolves_to": [
+            "162.241.252.80"
+          ],
+          "response": 200,
+          "scan_date": "2024-03-10T17:32:03Z",
+          "scheme": "https",
+          "ssl": {
+            "CHV": "7ef117b4ce58f14d4f1737b7ab1c982a82bb1fc:x:0012",
+            "SHA1": "C3:71:A7:E9:3D:4C:46:21:D0:DB:62:94:E4:E8:54:63:B4:9E:9E:5E",
+            "SHA256": "3A:8E:FC:BD:76:41:96:69:5D:57:BA:4D:8C:F7:5B:CD:C6:09:3E:33:FE:E4:96:25:81:CA:CD:17:E3:65:4E:85",
+            "authority_key_id": "14:2E:B3:17:B7:58:56:CB:AE:50:09:40:E6:1F:AF:9D:8B:14:C2:C6",
+            "expired": false,
+            "issuer": {
+              "common_name": "R3",
+              "country": "US",
+              "organization": "Let's Encrypt"
+            },
+            "not_after": "2024-05-30T20:39:26Z",
+            "not_before": "2024-03-01T20:39:27Z",
+            "sans": [
+              "autodiscover.grn.hdv.mybluehost.me",
+              "cpanel.grn.hdv.mybluehost.me",
+              "cpcalendars.grn.hdv.mybluehost.me",
+              "cpcontacts.grn.hdv.mybluehost.me",
+              "grn.hdv.mybluehost.me",
+              "mail.grn.hdv.mybluehost.me",
+              "mail.malasada.tech",
+              "malasada.tech",
+              "webdisk.grn.hdv.mybluehost.me",
+              "webmail.grn.hdv.mybluehost.me",
+              "www.grn.hdv.mybluehost.me",
+              "www.malasada.tech"
+            ],
+            "sans_count": 12,
+            "serial_number": "402049157111752608020048611556078269746097",
+            "sigalg": "sha256WithRSAEncryption",
+            "subject": {
+              "common_name": "mail.grn.hdv.mybluehost.me"
+            },
+            "subject_key_id": "30:48:DF:67:F3:80:E3:C3:56:56:9F:B3:CB:EE:A3:B5:12:3B:4C:60",
+            "wildcard": false
+          },
+          "subdomain": "",
+          "tld": "tech",
+          "url": "https://malasada.tech",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.3"
+        },
+        {
+          "HHV": "55c4313e20cfe62771a8621b38",
+          "body_analysis": {
+            "SHV": "ad5f3bedf26e2bb0a30917fec9",
+            "adsense": [],
+            "body_sha256": "7512d0d873f7cbf897616d160d5948c5fec64f6100eeaa3f70d292bd767331e0",
+            "footer_sha256": "7cc423ffe1aa4a36b1511b2a23d752c1693b0b705cca258fd185fd71fd8dc462",
+            "google-GA4": [],
+            "google-UA": [],
+            "google-adstag": [],
+            "header_sha256": "d2f0a8e2f31db4283ce9ff9ee37958e1b150b74065ee0c3f47e4dc20f6b18b62",
+            "js_sha256": [],
+            "js_ssdeep": [],
+            "language": [
+              "English"
+            ],
+            "onion": []
+          },
+          "datahash": "042e23509becf5dcd79657725e8d853fa9903bf481fa5447c084170c4ffcbf67",
+          "datasource": "webscan",
+          "domain": "malasada.tech",
+          "favicon2_avg": "fff87c0e019260180703e1fff",
+          "favicon2_md5": "0dcd4e67512eb332a520aeb2adb0ef58",
+          "favicon2_murmur3": -1764958884,
+          "favicon2_path": "https://malasada.tech/wp-content/uploads/2024/03/cropped-Malasada-Tech-3-1-192x192.webp",
+          "favicon_md5": "",
+          "favicon_urls": [
+            "https://malasada.tech/wp-content/uploads/2024/03/cropped-Malasada-Tech-3-1-192x192.webp",
+            "https://malasada.tech/wp-content/uploads/2024/03/cropped-Malasada-Tech-3-1-32x32.webp"
+          ],
+          "file": false,
+          "file_sha256": "",
+          "geoip": {
+            "as_org": "UNIFIEDLAYER-AS-1",
+            "asn": 46606,
+            "continent_code": "NA",
+            "country_code2": "US",
+            "country_code3": "US",
+            "country_name": "United States",
+            "ip": "162.241.252.80",
+            "latitude": 37.751,
+            "location": {
+              "lat": 37.751,
+              "lon": -97.822
+            },
+            "longitude": -97.822,
+            "timezone": "America/Chicago"
+          },
+          "header": {
+            "cache-control": "max-age=7200",
+            "content-encoding": "gzip",
+            "content-type": "text/html; charset=UTF-8",
+            "expires": "Sun, 10 Mar 2024 17:45:53 GMT",
+            "server": "nginx/1.21.6"
+          },
+          "hostname": "malasada.tech",
+          "html_body_murmur3": -907382188,
+          "html_body_sha256": "c2b8e9af3273ac784bbd224c34be294039966aef7ceb19ca2ee2b5f38f9ef550",
+          "html_body_similarity": 0,
+          "html_body_ssdeep": "1536:j9apj0eQeLCFDMxcwv4fx6AKBWHCMPx890h:gx0ELuDMxcwv4fx6AK0bW90h",
+          "htmltitle": "Malasada Tech - Tech Insights at Your Fingertips: Innovate, Secure, Connect",
+          "ip": "162.241.252.80",
+          "opendirectory": false,
+          "origin_domain": "malasada.tech",
+          "origin_hostname": "malasada.tech",
+          "origin_ip": "162.241.252.80",
+          "origin_path": "",
+          "origin_port": 80,
+          "origin_resolves_to": [
+            "162.241.252.80"
+          ],
+          "origin_scheme": "http",
+          "origin_url": "http://malasada.tech",
+          "path": "",
+          "port": 80,
+          "redirect": false,
+          "redirect_to_https": false,
+          "resolves_to": [
+            "162.241.252.80"
+          ],
+          "response": 200,
+          "scan_date": "2024-03-10T17:31:47Z",
+          "scheme": "http",
+          "ssl": {
+            "SHA1": ""
+          },
+          "subdomain": "",
+          "tld": "tech",
+          "url": "http://malasada.tech",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.3"
+        },
+        {
+          "HHV": "2b0ccda8f1ad5b936a80985685",
+          "body_analysis": {
+            "SHV": "368791b0d15d215a658dda8db4",
+            "adsense": [],
+            "body_sha256": "526cb2f6c14d5a205f0e5a39944a8fd25a2a3ceeb28ffbf154b771d1b00cf3aa",
+            "footer_sha256": "e04f775a906dbf44d39684b3dbe2f9d063bcc3a252841c751ac5199d7e3f6e2b",
+            "google-GA4": [],
+            "google-UA": [],
+            "google-adstag": [],
+            "js_sha256": [],
+            "js_ssdeep": [],
+            "language": [],
+            "onion": []
+          },
+          "datahash": "34a7de15c8b88c6da49179fef4a1b44f61b7298fc0482b9820081015870aa002",
+          "datasource": "webscan",
+          "domain": "malasada.tech",
+          "favicon2_md5": "",
+          "favicon_md5": "",
+          "file": false,
+          "file_sha256": "",
+          "geoip": {
+            "as_org": "UNIFIEDLAYER-AS-1",
+            "asn": 46606,
+            "continent_code": "NA",
+            "country_code2": "US",
+            "country_code3": "US",
+            "country_name": "United States",
+            "ip": "162.241.252.80",
+            "latitude": 37.751,
+            "location": {
+              "lat": 37.751,
+              "lon": -97.822
+            },
+            "longitude": -97.822,
+            "timezone": "America/Chicago"
+          },
+          "header": {
+            "cache-control": "no-store, no-cache, must-revalidate, max-age=7200",
+            "content-encoding": "gzip",
+            "content-length": "1258",
+            "content-type": "text/html; charset=UTF-8",
+            "expires": "Sun, 03 Mar 2024 17:32:59 GMT",
+            "server": "nginx/1.21.6"
+          },
+          "hostname": "malasada.tech",
+          "html_body_murmur3": 307890977,
+          "html_body_sha256": "46f2b0c4181e4e22bd4d0859e17bf4c7cadc5e190df37ddfcc0fc84a4e8b3325",
+          "html_body_similarity": 100,
+          "html_body_ssdeep": "48:4u441stauctpJSDgGG45s40e3FJ9pT8lvMpPgE0bIQ/LuwodXObG:4ZgBS0+MIJz8kpPgBIQiwkj",
+          "htmltitle": "Malasada Tech \u2014 Coming Soon",
+          "ip": "162.241.252.80",
+          "jarm": "29d29d15d29d29d00042d42d000000cd600c085f371f8533aaf66051f8e5b1",
+          "opendirectory": false,
+          "origin_domain": "malasada.tech",
+          "origin_hostname": "malasada.tech",
+          "origin_ip": "162.241.252.80",
+          "origin_path": "",
+          "origin_port": 443,
+          "origin_resolves_to": [
+            "162.241.252.80"
+          ],
+          "origin_scheme": "https",
+          "origin_url": "https://malasada.tech",
+          "path": "",
+          "port": 443,
+          "redirect": false,
+          "redirect_to_https": false,
+          "resolves_to": [
+            "162.241.252.80"
+          ],
+          "response": 200,
+          "scan_date": "2024-03-03T15:33:02Z",
+          "scheme": "https",
+          "ssl": {
+            "CHV": "7ef117b4ce58f14d4f1737b7ab1c982a82bb1fc:x:0012",
+            "SHA1": "C3:71:A7:E9:3D:4C:46:21:D0:DB:62:94:E4:E8:54:63:B4:9E:9E:5E",
+            "SHA256": "3A:8E:FC:BD:76:41:96:69:5D:57:BA:4D:8C:F7:5B:CD:C6:09:3E:33:FE:E4:96:25:81:CA:CD:17:E3:65:4E:85",
+            "authority_key_id": "14:2E:B3:17:B7:58:56:CB:AE:50:09:40:E6:1F:AF:9D:8B:14:C2:C6",
+            "expired": false,
+            "issuer": {
+              "common_name": "R3",
+              "country": "US",
+              "organization": "Let's Encrypt"
+            },
+            "not_after": "2024-05-30T20:39:26Z",
+            "not_before": "2024-03-01T20:39:27Z",
+            "sans": [
+              "autodiscover.grn.hdv.mybluehost.me",
+              "cpanel.grn.hdv.mybluehost.me",
+              "cpcalendars.grn.hdv.mybluehost.me",
+              "cpcontacts.grn.hdv.mybluehost.me",
+              "grn.hdv.mybluehost.me",
+              "mail.grn.hdv.mybluehost.me",
+              "mail.malasada.tech",
+              "malasada.tech",
+              "webdisk.grn.hdv.mybluehost.me",
+              "webmail.grn.hdv.mybluehost.me",
+              "www.grn.hdv.mybluehost.me",
+              "www.malasada.tech"
+            ],
+            "sans_count": 12,
+            "serial_number": "402049157111752608020048611556078269746097",
+            "sigalg": "sha256WithRSAEncryption",
+            "subject": {
+              "common_name": "mail.grn.hdv.mybluehost.me"
+            },
+            "subject_key_id": "30:48:DF:67:F3:80:E3:C3:56:56:9F:B3:CB:EE:A3:B5:12:3B:4C:60",
+            "wildcard": false
+          },
+          "subdomain": "",
+          "tld": "tech",
+          "url": "https://malasada.tech",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
+        },
+        {
+          "HHV": "2b0ccda8f1ad5b936a80985685",
+          "body_analysis": {
+            "SHV": "368791b0d15d215a658dda8db4",
+            "adsense": [],
+            "body_sha256": "526cb2f6c14d5a205f0e5a39944a8fd25a2a3ceeb28ffbf154b771d1b00cf3aa",
+            "footer_sha256": "e04f775a906dbf44d39684b3dbe2f9d063bcc3a252841c751ac5199d7e3f6e2b",
+            "google-GA4": [],
+            "google-UA": [],
+            "google-adstag": [],
+            "js_sha256": [],
+            "js_ssdeep": [],
+            "language": [],
+            "onion": []
+          },
+          "datahash": "a936bff509692f90e2aec11d5b8fe2e24453ca838ab46f8540f02ef80a1a5c84",
+          "datasource": "webscan",
+          "domain": "malasada.tech",
+          "favicon2_md5": "",
+          "favicon_md5": "",
+          "file": false,
+          "file_sha256": "",
+          "geoip": {
+            "as_org": "UNIFIEDLAYER-AS-1",
+            "asn": 46606,
+            "continent_code": "NA",
+            "country_code2": "US",
+            "country_code3": "US",
+            "country_name": "United States",
+            "ip": "162.241.252.80",
+            "latitude": 37.751,
+            "location": {
+              "lat": 37.751,
+              "lon": -97.822
+            },
+            "longitude": -97.822,
+            "timezone": "America/Chicago"
+          },
+          "header": {
+            "cache-control": "no-store, no-cache, must-revalidate, max-age=7200",
+            "content-encoding": "gzip",
+            "content-length": "1261",
+            "content-type": "text/html; charset=UTF-8",
+            "expires": "Sun, 03 Mar 2024 17:32:54 GMT",
+            "server": "nginx/1.21.6"
+          },
+          "hostname": "malasada.tech",
+          "html_body_murmur3": -1703576704,
+          "html_body_sha256": "7668d1de790cc89becf126546fceea1ac79029ebe0dd1021c311e6a340ce3886",
+          "html_body_similarity": 100,
+          "html_body_ssdeep": "48:4t441stauctpJSDgGG45s40e3FJ9pTDlvMpPgE0bIQ/LuwodXObG:4agBS0+MIJzVkpPgBIQiwkj",
+          "htmltitle": "Malasada Tech \u2014 Coming Soon",
+          "ip": "162.241.252.80",
+          "opendirectory": false,
+          "origin_domain": "malasada.tech",
+          "origin_hostname": "malasada.tech",
+          "origin_ip": "162.241.252.80",
+          "origin_path": "",
+          "origin_port": 80,
+          "origin_resolves_to": [
+            "162.241.252.80"
+          ],
+          "origin_scheme": "http",
+          "origin_url": "http://malasada.tech",
+          "path": "",
+          "port": 80,
+          "redirect": false,
+          "redirect_to_https": false,
+          "resolves_to": [
+            "162.241.252.80"
+          ],
+          "response": 200,
+          "scan_date": "2024-03-03T15:32:55Z",
+          "scheme": "http",
+          "ssl": {
+            "SHA1": ""
+          },
+          "subdomain": "",
+          "tld": "tech",
+          "url": "http://malasada.tech",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
+        },
+        {
+          "HHV": "df2e6a01678cd3e4e1b781499f",
+          "body_analysis": {
+            "SHV": "368791b0d15d215a658dda8db4",
+            "adsense": [],
+            "body_sha256": "526cb2f6c14d5a205f0e5a39944a8fd25a2a3ceeb28ffbf154b771d1b00cf3aa",
+            "footer_sha256": "e04f775a906dbf44d39684b3dbe2f9d063bcc3a252841c751ac5199d7e3f6e2b",
+            "google-GA4": [],
+            "google-UA": [],
+            "google-adstag": [],
+            "js_sha256": [],
+            "js_ssdeep": [],
+            "language": [],
+            "onion": []
+          },
+          "datahash": "d14bc0330aa350f1e032bf09796a6e4755687a4fc204821a37df4779b2e0cb9d",
+          "datasource": "webscan",
+          "domain": "malasada.tech",
+          "favicon2_md5": "",
+          "favicon_md5": "",
+          "file": false,
+          "file_sha256": "",
+          "geoip": {
+            "as_org": "UNIFIEDLAYER-AS-1",
+            "asn": 46606,
+            "continent_code": "NA",
+            "country_code2": "US",
+            "country_code3": "US",
+            "country_name": "United States",
+            "ip": "162.241.252.80",
+            "latitude": 37.751,
+            "location": {
+              "lat": 37.751,
+              "lon": -97.822
+            },
+            "longitude": -97.822,
+            "timezone": "America/Chicago"
+          },
+          "header": {
+            "cache-control": "no-store, no-cache, must-revalidate",
+            "content-encoding": "gzip",
+            "content-length": "1258",
+            "content-type": "text/html; charset=UTF-8",
+            "expires": "Wed, 11 Jan 1984 05:00:00 GMT",
+            "server": "nginx/1.21.6"
+          },
+          "hostname": "malasada.tech",
+          "html_body_murmur3": 307890977,
+          "html_body_sha256": "46f2b0c4181e4e22bd4d0859e17bf4c7cadc5e190df37ddfcc0fc84a4e8b3325",
+          "html_body_similarity": "",
+          "html_body_ssdeep": "48:4u441stauctpJSDgGG45s40e3FJ9pT8lvMpPgE0bIQ/LuwodXObG:4ZgBS0+MIJz8kpPgBIQiwkj",
+          "htmltitle": "Malasada Tech \u2014 Coming Soon",
+          "ip": "162.241.252.80",
+          "jarm": "29d29d15d29d29d00042d42d000000cd600c085f371f8533aaf66051f8e5b1",
+          "opendirectory": false,
+          "origin_domain": "malasada.tech",
+          "origin_hostname": "malasada.tech",
+          "origin_ip": "162.241.252.80",
+          "origin_path": "",
+          "origin_port": 443,
+          "origin_resolves_to": [
+            "162.241.252.80"
+          ],
+          "origin_scheme": "https",
+          "origin_url": "https://malasada.tech",
+          "path": "",
+          "port": 443,
+          "redirect": false,
+          "redirect_to_https": false,
+          "resolves_to": [
+            "162.241.252.80"
+          ],
+          "response": 404,
+          "scan_date": "2024-03-02T14:13:11Z",
+          "scheme": "https",
+          "ssl": {
+            "CHV": "7ef117b4ce58f14d4f1737b7ab1c982a82bb1fc:x:0012",
+            "SHA1": "C3:71:A7:E9:3D:4C:46:21:D0:DB:62:94:E4:E8:54:63:B4:9E:9E:5E",
+            "SHA256": "3A:8E:FC:BD:76:41:96:69:5D:57:BA:4D:8C:F7:5B:CD:C6:09:3E:33:FE:E4:96:25:81:CA:CD:17:E3:65:4E:85",
+            "authority_key_id": "14:2E:B3:17:B7:58:56:CB:AE:50:09:40:E6:1F:AF:9D:8B:14:C2:C6",
+            "expired": false,
+            "issuer": {
+              "common_name": "R3",
+              "country": "US",
+              "organization": "Let's Encrypt"
+            },
+            "not_after": "2024-05-30T20:39:26Z",
+            "not_before": "2024-03-01T20:39:27Z",
+            "sans": [
+              "autodiscover.grn.hdv.mybluehost.me",
+              "cpanel.grn.hdv.mybluehost.me",
+              "cpcalendars.grn.hdv.mybluehost.me",
+              "cpcontacts.grn.hdv.mybluehost.me",
+              "grn.hdv.mybluehost.me",
+              "mail.grn.hdv.mybluehost.me",
+              "mail.malasada.tech",
+              "malasada.tech",
+              "webdisk.grn.hdv.mybluehost.me",
+              "webmail.grn.hdv.mybluehost.me",
+              "www.grn.hdv.mybluehost.me",
+              "www.malasada.tech"
+            ],
+            "sans_count": 12,
+            "serial_number": "402049157111752608020048611556078269746097",
+            "sigalg": "sha256WithRSAEncryption",
+            "subject": {
+              "common_name": "mail.grn.hdv.mybluehost.me"
+            },
+            "subject_key_id": "30:48:DF:67:F3:80:E3:C3:56:56:9F:B3:CB:EE:A3:B5:12:3B:4C:60",
+            "wildcard": false
+          },
+          "subdomain": "",
+          "tld": "tech",
+          "url": "https://malasada.tech",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
+        },
+        {
+          "HHV": "df2e6a01678cd3e4e1b781499f",
+          "body_analysis": {
+            "SHV": "368791b0d15d215a658dda8db4",
+            "adsense": [],
+            "body_sha256": "526cb2f6c14d5a205f0e5a39944a8fd25a2a3ceeb28ffbf154b771d1b00cf3aa",
+            "footer_sha256": "e04f775a906dbf44d39684b3dbe2f9d063bcc3a252841c751ac5199d7e3f6e2b",
+            "google-GA4": [],
+            "google-UA": [],
+            "google-adstag": [],
+            "js_sha256": [],
+            "js_ssdeep": [],
+            "language": [],
+            "onion": []
+          },
+          "datahash": "42bb45088170e0cc0679cc07c60515d5273fec9da446b91c266b9770c5d3ecdd",
+          "datasource": "webscan",
+          "domain": "malasada.tech",
+          "favicon2_md5": "",
+          "favicon_md5": "",
+          "file": false,
+          "file_sha256": "",
+          "geoip": {
+            "as_org": "UNIFIEDLAYER-AS-1",
+            "asn": 46606,
+            "continent_code": "NA",
+            "country_code2": "US",
+            "country_code3": "US",
+            "country_name": "United States",
+            "ip": "162.241.252.80",
+            "latitude": 37.751,
+            "location": {
+              "lat": 37.751,
+              "lon": -97.822
+            },
+            "longitude": -97.822,
+            "timezone": "America/Chicago"
+          },
+          "header": {
+            "cache-control": "no-store, no-cache, must-revalidate",
+            "content-encoding": "gzip",
+            "content-length": "1261",
+            "content-type": "text/html; charset=UTF-8",
+            "expires": "Wed, 11 Jan 1984 05:00:00 GMT",
+            "server": "nginx/1.21.6"
+          },
+          "hostname": "malasada.tech",
+          "html_body_murmur3": -1703576704,
+          "html_body_sha256": "7668d1de790cc89becf126546fceea1ac79029ebe0dd1021c311e6a340ce3886",
+          "html_body_similarity": "",
+          "html_body_ssdeep": "48:4t441stauctpJSDgGG45s40e3FJ9pTDlvMpPgE0bIQ/LuwodXObG:4agBS0+MIJzVkpPgBIQiwkj",
+          "htmltitle": "Malasada Tech \u2014 Coming Soon",
+          "ip": "162.241.252.80",
+          "opendirectory": false,
+          "origin_domain": "malasada.tech",
+          "origin_hostname": "malasada.tech",
+          "origin_ip": "162.241.252.80",
+          "origin_path": "",
+          "origin_port": 80,
+          "origin_resolves_to": [
+            "162.241.252.80"
+          ],
+          "origin_scheme": "http",
+          "origin_url": "http://malasada.tech",
+          "path": "",
+          "port": 80,
+          "redirect": false,
+          "redirect_to_https": false,
+          "resolves_to": [
+            "162.241.252.80"
+          ],
+          "response": 404,
+          "scan_date": "2024-03-02T14:13:06Z",
+          "scheme": "http",
+          "ssl": {
+            "SHA1": ""
+          },
+          "subdomain": "",
+          "tld": "tech",
+          "url": "http://malasada.tech",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
+        }
+      ]
+    }
+  }
+}

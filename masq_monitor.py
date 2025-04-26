@@ -116,33 +116,59 @@ class MasqMonitor:
         # Determine the lookback period
         if days is not None:
             # Explicit days parameter takes precedence
-            date_from = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime("%Y-%m-%d")
-            query_string = f"{query_string} AND date:>={date_from}"
-            print(f"Running query: {query_name} (limited to {days} days from {date_from})")
+            date_from = datetime.datetime.now() - datetime.timedelta(days=days)
+            if platform == "silentpush":
+                # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                date_from_str = date_from.strftime("%Y-%m-%dT%H:%M:%SZ")
+                query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+            else:
+                # Format as YYYY-MM-DD for urlscan.io
+                date_from_str = date_from.strftime("%Y-%m-%d")
+                query_string = f"{query_string} AND date:>={date_from_str}"
+            print(f"Running query: {query_name} (limited to {days} days from {date_from_str})")
         elif "last_run" in query_config and query_config["last_run"]:
             # Use last run time if available
             try:
                 last_run = datetime.datetime.fromisoformat(query_config["last_run"])
-                # Format as YYYY-MM-DD for the urlscan.io date filter
-                date_from = last_run.strftime("%Y-%m-%d")
-                query_string = f"{query_string} AND date:>={date_from}"
-                print(f"Running query: {query_name} (from last run on {date_from})")
+                if platform == "silentpush":
+                    # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                    date_from_str = last_run.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                else:
+                    # Format as YYYY-MM-DD for urlscan.io
+                    date_from_str = last_run.strftime("%Y-%m-%d")
+                    query_string = f"{query_string} AND date:>={date_from_str}"
+                print(f"Running query: {query_name} (from last run on {date_from_str})")
             except (ValueError, TypeError):
                 # Fall back to default_days if last_run is invalid
                 default_days = self.config.get("default_days")
                 if default_days is not None:
-                    date_from = (datetime.datetime.now() - datetime.timedelta(days=default_days)).strftime("%Y-%m-%d")
-                    query_string = f"{query_string} AND date:>={date_from}"
-                    print(f"Running query: {query_name} (limited to default {default_days} days from {date_from})")
+                    date_from = datetime.datetime.now() - datetime.timedelta(days=default_days)
+                    if platform == "silentpush":
+                        # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                        date_from_str = date_from.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                    else:
+                        # Format as YYYY-MM-DD for urlscan.io
+                        date_from_str = date_from.strftime("%Y-%m-%d")
+                        query_string = f"{query_string} AND date:>={date_from_str}"
+                    print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
                 else:
                     print(f"Running query: {query_name} (no date filter)")
         else:
             # If no last_run and no days specified, try using default_days
             default_days = self.config.get("default_days")
             if default_days is not None:
-                date_from = (datetime.datetime.now() - datetime.timedelta(days=default_days)).strftime("%Y-%m-%d")
-                query_string = f"{query_string} AND date:>={date_from}"
-                print(f"Running query: {query_name} (limited to default {default_days} days from {date_from})")
+                date_from = datetime.datetime.now() - datetime.timedelta(days=default_days)
+                if platform == "silentpush":
+                    # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                    date_from_str = date_from.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                else:
+                    # Format as YYYY-MM-DD for urlscan.io
+                    date_from_str = date_from.strftime("%Y-%m-%d")
+                    query_string = f"{query_string} AND date:>={date_from_str}"
+                print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
             else:
                 print(f"Running query: {query_name} (no date filter)")
         

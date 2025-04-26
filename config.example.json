@@ -432,6 +432,28 @@
                 "chase",
                 "domain-monitoring"
             ]
+        },
+        "malasadatech-whois-test": {
+            "description": "Testing query for whois information about malasada.tech domain",
+            "query": "datasource = \"whois\" AND domain = \"malasada.tech\"",
+            "platform": "silentpush",
+            "last_run": "2025-04-25T20:26:01.713861",
+            "reference": "https://malasada.tech",
+            "titles": [
+                {
+                    "title": "This is a test query to retrieve WHOIS information for the malasada.tech domain",
+                    "tlp_level": "clear"
+                }
+            ],
+            "notes": "This is a test query to retrieve WHOIS information for the malasada.tech domain",
+            "frequency": "weekly",
+            "priority": "medium",
+            "days": 425,
+            "tags": [
+                "testing",
+                "whois",
+                "malasadatech"
+            ]
         }
     }
 }

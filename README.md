@@ -14,7 +14,7 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 ## Features
 
 - Queries search platforms for potential masquerade websites (BYO-Queries)
-- Multiple platform support (urlscan.io and Silent Push WHOIS scanner)
+- Multiple platform support (urlscan.io and Silent Push with both WHOIS and webscan data)
 - Modular architecture with platform-specific client modules
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
@@ -32,6 +32,8 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - Customizable report username
 - Branded footer with project links
 - API keys stored in .env file for better security
+- Automatic data type detection for Silent Push results (WHOIS vs webscan)
+- Specialized report formatting for different data types
 
 ## Example Monitoring Techniques
 
@@ -366,7 +368,7 @@ For a detailed history of changes and improvements, please see the [changelog.md
 - ✓ Add query groups for organizing related queries and generating comprehensive reports
 - ✓ Move API keys to .env file for better security
 - ✓ Add support for multiple search platforms including "urlscan" and "silentpush"
-- Implement Silent Push API integration
+- ✓ Implement Silent Push API integration with both WHOIS and webscan data handling
 - Implement email notifications for new findings
 - Support for custom report templates
 - Add ability to export results to CSV/JSON
