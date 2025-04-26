@@ -1044,7 +1044,7 @@ class MasqMonitor:
                     result["local_screenshot"] = f"images/{uuid}.png"
                 
                 processed_results.append(result)
-
+ 
         # Use the provided timestamp or generate current time
         current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
