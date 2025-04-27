@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masquerade Monitor Report - {{ query_name }}</title>
+    {% include 'components/styles.html' %}
+</head>
+<body>
+    <div class="overall-tlp-banner">
+        Overall TLP of this document: <span class="tlp tlp-{{ tlp_level }}">TLP:{{ tlp_level }}</span>
+    </div>
+
+    <div class="theme-toggle">
+        <span class="settings-cog" id="settings-cog">⚙️</span>
+        <div class="theme-toggle-panel" id="theme-toggle-panel">
+            <span class="icon">🌞</span>
+            <input type="checkbox" id="theme-toggle" />
+            <label for="theme-toggle"></label>
+            <span class="icon">🌙</span>
+        </div>
+    </div>
+
+    <!-- Image Modal for expanded view -->
+    <div id="imageModal" class="image-modal">
+        <span class="close-modal">&times;</span>
+        <img id="expandedImage" class="modal-image">
+    </div>
+
+    <div class="container">
+        {% include 'components/header.html' %}
+
+        {% if query_data %}
+            {% include 'components/metadata.html' %}
+        {% endif %}
+
+        {% if debug %}
+            {% include 'components/debug_info.html' %}
+        {% endif %}
+
+        <main>
+            <h2>Results ({{ results|length }})</h2>
+
+            {% if results %}
+                {% if is_group_report and query_sections %}
+                    <!-- Group report - organize by query sections -->
+                    {% for section in query_sections %}
+                        <div class="query-section">
+                            <h3>{{ section.name }} {% if section.type == "query_group" %}(Query Group){% endif %}</h3>
+                            
+                            {% if section.config %}
+                                {% include 'components/section_metadata.html' %}
+                            {% endif %}
+
+                            <div class="results">
+                            {% for result in results %}
+                                {% if result.source_query == section.name %}
+                                    {% include get_platform_template(result) %}
+                                {% endif %}
+                            {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Standard single-query report -->
+                    <!-- Platform-specific result display based on data type -->
+                    {% if platform == "silentpush" %}
+                        {% for result in results %}
+                            {% include get_platform_template(result) %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Default URLScan.io display -->
+                        <div class="results">
+                        {% for result in results %}
+                            {% include 'platforms/urlscan_result.html' %}
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <p>No results found for this query.</p>
+            {% endif %}
+        </main>
+
+        {% include 'components/footer.html' %}
+    </div>
+    
+    {% include 'components/scripts.html' %}
+</body>
+</html>

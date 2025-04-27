@@ -16,6 +16,8 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - Queries search platforms for potential masquerade websites (BYO-Queries)
 - Multiple platform support (urlscan.io and Silent Push with both WHOIS and webscan data)
 - Modular architecture with platform-specific client modules
+- Modular template system with components for different report sections and result types
+- Extensible template registry for automatically selecting the right template for each result type
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
 - Dedicated report generation module separated from main application logic

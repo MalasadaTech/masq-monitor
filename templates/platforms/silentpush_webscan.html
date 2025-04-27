@@ -1,0 +1,62 @@
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Web Scan Information for: {{ result.domain }}</h5>
+        <small class="text-muted">Scan Date: {{ result.scan_date }}</small>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Website Information</h6>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item"><strong>Domain:</strong> {{ result.defanged_domain }}</li>
+                    <li class="list-group-item"><strong>URL:</strong> {{ result.defanged_url }}</li>
+                    <li class="list-group-item"><strong>Title:</strong> {{ result.htmltitle }}</li>
+                    <li class="list-group-item"><strong>IP:</strong> {{ result.ip }}</li>
+                    <li class="list-group-item"><strong>Response Code:</strong> {{ result.response_code }}</li>
+                    <li class="list-group-item"><strong>Server:</strong> {{ result.server }}</li>
+                    <li class="list-group-item"><strong>Content Type:</strong> {{ result.content_type }}</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>SSL Certificate Information</h6>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item"><strong>Issuer:</strong> {{ result.ssl.issuer }}</li>
+                    <li class="list-group-item"><strong>Issued On:</strong> {{ result.ssl.issued }}</li>
+                    <li class="list-group-item"><strong>Expires On:</strong> {{ result.ssl.expires }}</li>
+                    <li class="list-group-item"><strong>SANs Count:</strong> {{ result.ssl.sans_count }}</li>
+                    <li class="list-group-item"><strong>Wildcard:</strong> {{ "Yes" if result.ssl.wildcard else "No" }}</li>
+                </ul>
+                
+                <h6>GeoIP Information</h6>
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Country:</strong> {{ result.geoip.country }}</li>
+                    <li class="list-group-item"><strong>City:</strong> {{ result.geoip.city }}</li>
+                    <li class="list-group-item"><strong>ISP:</strong> {{ result.geoip.isp }}</li>
+                    <li class="list-group-item"><strong>ASN:</strong> {{ result.geoip.asn }}</li>
+                    <li class="list-group-item"><strong>Coordinates:</strong> {{ result.geoip.latitude }}, {{ result.geoip.longitude }}</li>
+                </ul>
+            </div>
+        </div>
+        
+        {% if result.raw_record.favicon_urls %}
+        <div class="mt-3">
+            <h6>Favicon Information</h6>
+            <ul class="list-group">
+                <li class="list-group-item"><strong>Favicon URLs:</strong> 
+                    <ul>
+                        {% for favicon_url in result.raw_record.favicon_urls %}
+                            <li>{{ favicon_url }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% if result.raw_record.favicon_murmur3 %}
+                <li class="list-group-item"><strong>Favicon Hash (Murmur3):</strong> {{ result.raw_record.favicon_murmur3 }}</li>
+                {% endif %}
+                {% if result.raw_record.favicon_md5 %}
+                <li class="list-group-item"><strong>Favicon Hash (MD5):</strong> {{ result.raw_record.favicon_md5 }}</li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
