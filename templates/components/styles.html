@@ -123,19 +123,65 @@
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 20px;
     }
+    
+    /* Screenshot container styling */
+    .screenshot-container {
+        position: relative;
+        margin-bottom: 15px;
+        padding-top: 35px; /* Add padding at the top to make room for the result number */
+    }
+    
+    /* Specific styling for result numbers when screenshots are present */
+    .screenshot-container + .result-info {
+        clear: both;
+        padding-top: 5px;
+    }
+    
+    /* Result numbering styles */
+    .result-container {
+        position: relative;
+        margin-bottom: 15px;
+    }
+
+    .result-number {
+        position: absolute;
+        top: 10px;
+        left: 10px; /* Changed from right to left */
+        background-color: rgba(245, 245, 245, 0.9);
+        color: var(--text-color);
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.95em;
+        border: 1px solid var(--border-color);
+        z-index: 10; /* Higher z-index to ensure it's on top */
+        box-shadow: 0 1px 3px var(--shadow-color);
+    }
+    
+    [data-theme="dark"] .result-number {
+        background-color: rgba(45, 45, 45, 0.9);
+        color: var(--text-color);
+    }
+    
+    /* Adjust result card to accommodate the number */
     .result-card {
+        position: relative;
         border: 1px solid var(--border-color);
         border-radius: 5px;
         padding: 15px;
+        padding-top: 40px; /* Increased padding at the top for all result types */
         box-shadow: 0 2px 4px var(--shadow-color);
         background-color: var(--card-bg);
     }
+    
+    /* Adjust the thumbnail to make room for the result number */
     .thumbnail {
         width: 100%;
         border: 1px solid var(--border-color);
         margin-bottom: 10px;
         cursor: pointer;
         transition: opacity 0.3s;
+        margin-top: 10px; /* Add spacing at the top of the screenshot */
     }
     .thumbnail:hover {
         opacity: 0.8;
@@ -552,5 +598,25 @@
     .query-section:last-child {
         border-bottom: none;
         margin-bottom: 0;
+    }
+
+    /* Additional styling for SilentPush results */
+    .silentpush-result {
+        margin-top: 25px; /* Add space above the card to prevent number overlap */
+    }
+    
+    .silentpush-result .card-header {
+        padding-top: 15px; /* More padding at the top of the header */
+    }
+    
+    /* Adjust result card to accommodate the number */
+    .result-card {
+        position: relative;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+        padding-top: 40px; /* Increased padding at the top for all result types */
+        box-shadow: 0 2px 4px var(--shadow-color);
+        background-color: var(--card-bg);
     }
 </style>

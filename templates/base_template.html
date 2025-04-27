@@ -53,10 +53,19 @@
                             {% endif %}
 
                             <div class="results">
+                            {% set section_results = [] %}
                             {% for result in results %}
                                 {% if result.source_query == section.name %}
-                                    {% include get_platform_template(result) %}
+                                    {% set section_results = section_results + [result] %}
                                 {% endif %}
+                            {% endfor %}
+                            
+                            {% for i in range(section_results|length) %}
+                                {% set result = section_results[i] %}
+                                <div class="result-container">
+                                    <div class="result-number">#{{ i+1 }}</div>
+                                    {% include get_platform_template(result) %}
+                                </div>
                             {% endfor %}
                             </div>
                         </div>
@@ -65,14 +74,22 @@
                     <!-- Standard single-query report -->
                     <!-- Platform-specific result display based on data type -->
                     {% if platform == "silentpush" %}
-                        {% for result in results %}
-                            {% include get_platform_template(result) %}
+                        {% for i in range(results|length) %}
+                            {% set result = results[i] %}
+                            <div class="result-container">
+                                <div class="result-number">#{{ i+1 }}</div>
+                                {% include get_platform_template(result) %}
+                            </div>
                         {% endfor %}
                     {% else %}
                         <!-- Default URLScan.io display -->
                         <div class="results">
-                        {% for result in results %}
-                            {% include 'platforms/urlscan_result.html' %}
+                        {% for i in range(results|length) %}
+                            {% set result = results[i] %}
+                            <div class="result-container">
+                                <div class="result-number">#{{ i+1 }}</div>
+                                {% include 'platforms/urlscan_result.html' %}
+                            </div>
                         {% endfor %}
                         </div>
                     {% endif %}
