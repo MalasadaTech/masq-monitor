@@ -3,11 +3,29 @@
 import os
 import json
 import datetime
+import importlib.util
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 import jinja2
 import re
 from urllib.parse import urlparse
+
+# Import template registry
+def import_template_registry():
+    """Import template registry module."""
+    try:
+        registry_path = "templates/template_registry.py"
+        spec = importlib.util.spec_from_file_location("template_registry", registry_path)
+        if spec and spec.loader:
+            template_registry = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(template_registry)
+            return template_registry
+        else:
+            print("Error: Failed to load template_registry.py specification")
+            return None
+    except Exception as e:
+        print(f"Error importing template_registry.py: {e}")
+        return None
 
 class ReportGenerator:
     def __init__(self, config, output_dir):
@@ -21,6 +39,9 @@ class ReportGenerator:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.tlp_levels = ["clear", "white", "green", "amber", "red"]
+        
+        # Import template registry
+        self.template_registry = import_template_registry()
 
     def _defang_domain(self, domain):
         """Defang a domain to make it safe for sharing."""
@@ -32,7 +53,7 @@ class ReportGenerator:
         return defanged_domain
 
     def _defang_url(self, url):
-        """Defang a URL to make it safe for sharing."""
+        """Defang a URL to make it safe for sharing."""        
         if not url:
             return ""
         
@@ -120,7 +141,13 @@ class ReportGenerator:
         # Prepare template data
         template_loader = jinja2.FileSystemLoader(searchpath="./templates")
         template_env = jinja2.Environment(loader=template_loader)
-        template = template_env.get_template("report_template.html")
+        
+        # Add template registry function to the template environment
+        if self.template_registry and hasattr(self.template_registry, 'get_template_for_result'):
+            template_env.globals['get_platform_template'] = self.template_registry.get_template_for_result
+        
+        # Use the base template instead of the full report template
+        template = template_env.get_template("base_template.html")
         
         # Determine platform from query config
         platform = query_config.get("platform", "urlscan").lower()
@@ -302,13 +329,22 @@ class ReportGenerator:
         
         # Create Jinja2 environment with the appropriate template directory
         env = Environment(loader=FileSystemLoader(template_dir if template_dir else "templates"))
+        
+        # Add template registry function to the template environment
+        if self.template_registry and hasattr(self.template_registry, 'get_template_for_result'):
+            env.globals['get_platform_template'] = self.template_registry.get_template_for_result
+        
         try:
-            template = env.get_template(template_file)
+            # Use the base template instead of the full report template
+            template = env.get_template("base_template.html")
         except Exception as e:
             print(f"Error loading template {template_path}: {e}")
             print("Falling back to default template")
             env = Environment(loader=FileSystemLoader("templates"))
-            template = env.get_template("report_template.html")
+            # Add template registry function again to the fallback environment
+            if self.template_registry and hasattr(self.template_registry, 'get_template_for_result'):
+                env.globals['get_platform_template'] = self.template_registry.get_template_for_result
+            template = env.get_template("base_template.html")
         
         # Use the provided timestamp or generate current time
         current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

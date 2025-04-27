@@ -1,0 +1,55 @@
+<div class="metadata-section">
+    <h3>Debug Information</h3>
+    <div class="debug-info">
+        <h4>TLP Level: {{ tlp_level }}</h4>
+        <h4>References Debug:</h4>
+        <pre>{{ debug_info | default('Debug info not available') }}</pre>
+        
+        <h4>Raw References Data:</h4>
+        <pre>{{ query_data.references | tojson(indent=2) }}</pre>
+        
+        <h4>TLP Order:</h4>
+        <pre>clear: 1, white: 1, green: 2, amber: 3, red: 4</pre>
+        
+        <h4>Reference Visibility Check:</h4>
+        <ul>
+        {% for reference in query_data.references %}
+            {% if reference is mapping %}
+                {% set ref_level = reference.tlp_level|default('clear') %}
+                {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+                {% set report_level = tlp_level|default('clear') %}
+                <li>
+                    Reference TLP: {{ ref_level }} (order: {{ tlp_order[ref_level]|default(1) }})<br>
+                    Report TLP: {{ report_level }} (order: {{ tlp_order[report_level]|default(4) }})<br>
+                    Should be visible: {{ tlp_order[ref_level]|default(1) <= tlp_order[report_level]|default(4) }}
+                </li>
+            {% else %}
+                <li>Reference (without mapping): {{ reference }}</li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+    
+    <style>
+        .debug-info {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+        .debug-info pre {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+        }
+        [data-theme="dark"] .debug-info {
+            background-color: #333;
+            border-color: #444;
+        }
+        [data-theme="dark"] .debug-info pre {
+            background-color: #222;
+        }
+    </style>
+</div>

@@ -1,0 +1,98 @@
+<script>
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    const settingsCog = document.getElementById('settings-cog');
+    const themePanel = document.getElementById('theme-toggle-panel');
+    
+    // Check for saved theme preference or use system preference
+    const savedTheme = localStorage.getItem('theme') || 
+        (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    
+    // Set initial theme
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeToggle.checked = true;
+    }
+    
+    // Add event listener for theme switch
+    themeToggle.addEventListener('change', function() {
+        if (this.checked) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        }
+    });
+    
+    // Toggle settings panel with cog icon
+    settingsCog.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (themePanel.style.display === 'flex') {
+            themePanel.style.display = 'none';
+        } else {
+            themePanel.style.display = 'flex';
+        }
+    });
+    
+    // Close panel when clicking outside
+    document.addEventListener('click', function(e) {
+        if (themePanel.style.display === 'flex' && 
+            !themePanel.contains(e.target) && 
+            e.target !== settingsCog) {
+            themePanel.style.display = 'none';
+        }
+    });
+    
+    // Close panel with escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && themePanel.style.display === 'flex') {
+            themePanel.style.display = 'none';
+        }
+    });
+
+    // Image modal functionality
+    const imageModal = document.getElementById('imageModal');
+    const expandedImage = document.getElementById('expandedImage');
+    const closeModal = document.querySelector('.close-modal');
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    
+    // Add click event to all thumbnail images
+    thumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
+            imageModal.style.display = 'flex';
+            expandedImage.src = this.src;
+            expandedImage.alt = this.alt;
+            document.body.style.overflow = 'hidden'; // Prevent scrolling while modal is open
+        });
+    });
+    
+    // Close modal when clicking the X button
+    closeModal.addEventListener('click', function() {
+        imageModal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+    });
+    
+    // Close modal when clicking anywhere on the background
+    imageModal.addEventListener('click', function(e) {
+        if (e.target === imageModal) {
+            imageModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+    });
+    
+    // Close modal with escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // First check if theme panel is
+            if (themePanel.style.display === 'flex') {
+                themePanel.style.display = 'none';
+            }
+            // Then check if image modal is open and close that
+            else if (imageModal.style.display === 'flex') {
+                imageModal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Restore scrolling
+            }
+        }
+    });
+</script>

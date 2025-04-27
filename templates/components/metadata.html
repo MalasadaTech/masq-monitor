@@ -1,0 +1,163 @@
+<div class="meta">
+    {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+    {% set desc_level = query_data.description_tlp_level|default('clear') %}
+    {% set report_level = tlp_level|default('clear') %}
+    
+    {% if tlp_order[desc_level]|default(1) <= tlp_order[report_level]|default(4) %}
+        <p>
+            {% if query_data.description_tlp_level %}
+                <span class="tlp portion-marking tlp-{{ query_data.description_tlp_level }}">TLP:{{ query_data.description_tlp_level }}</span>
+            {% endif %}
+            {{ query_data.get('description', 'No description available') }}
+        </p>
+    {% endif %}
+    
+    {% set query_level = query_data.query_tlp_level|default('clear') %}
+    {% if tlp_order[query_level]|default(1) <= tlp_order[report_level]|default(4) %}
+        <p>
+            {% if query_data.query_tlp_level %}
+                <span class="tlp portion-marking tlp-{{ query_data.query_tlp_level }}">TLP:{{ query_data.query_tlp_level }}</span>
+            {% endif %}
+            Search query: <code>{{ query_data.get('query', 'No query specified') }}</code>
+        </p>
+    {% endif %}
+</div>
+
+{% if query_data.notes or query_data.frequency or query_data.priority or query_data.tags or query_data.references %}
+<div class="metadata-section">
+    <h3>Query Metadata</h3>
+    
+    <!-- Add query name to metadata section -->
+    <div class="metadata-item">
+        <span class="metadata-label">Query Name:</span> {{ query_name }}
+    </div>
+    
+    {% if query_data.notes %}
+    <div class="metadata-item">
+        <span class="metadata-label">Notes:</span>
+        {% if query_data.notes is string %}
+            {{ query_data.notes }}
+        {% else %}
+            <ul>
+            {% for note in query_data.notes %}
+                {% if note is mapping %}
+                    {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+                    {% set note_level = note.tlp_level|default('clear') %}
+                    {% set report_level = tlp_level|default('clear') %}
+                    
+                    {% if tlp_order[note_level]|default(1) <= tlp_order[report_level]|default(4) %}
+                        <li>
+                            {% if note.tlp_level %}
+                                <span class="tlp portion-marking tlp-{{ note.tlp_level }}">TLP:{{ note.tlp_level }}</span>
+                            {% endif %}
+                            {{ note.text }}
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li>{{ note }}</li>
+                {% endif %}
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if query_data.references %}
+    <div class="metadata-item">
+        <span class="metadata-label">References:</span>
+        
+        {% set visible_references = [] %}
+        
+        {% for reference in query_data.references %}
+            {% if reference is mapping %}
+                {% set ref_tlp = reference.tlp_level|default('clear') %}
+                {% if tlp_level == 'red' or
+                      (tlp_level == 'amber' and ref_tlp in ['clear', 'green', 'amber']) or
+                      (tlp_level == 'green' and ref_tlp in ['clear', 'green']) or
+                      (tlp_level in ['clear', 'white'] and ref_tlp in ['clear', 'white']) %}
+                    {% set _ = visible_references.append(reference) %}
+                {% endif %}
+            {% else %}
+                {% set _ = visible_references.append(reference) %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if visible_references|length > 0 %}
+            <ul>
+            {% for reference in visible_references %}
+                <li>
+                    {% if reference is mapping %}
+                        {% if reference.tlp_level %}
+                            <span class="tlp portion-marking tlp-{{ reference.tlp_level }}">TLP:{{ reference.tlp_level }}</span>
+                        {% endif %}
+                        {% if reference.url and reference.url.startswith('http') %}
+                            <a href="{{ reference.url }}" target="_blank">{{ reference.text if reference.text else reference.url }}</a>
+                        {% else %}
+                            {{ reference.text if reference.text else reference.url }}
+                        {% endif %}
+                        {% if reference.description %}
+                            - {{ reference.description }}
+                        {% endif %}
+                    {% else %}
+                        {{ reference }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p><em>There are no references available at this report's TLP level.</em></p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if query_data.frequency %}
+        {% set freq_tlp_level = query_data.frequency_tlp_level|default('clear') %}
+        {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+        {% set report_level = tlp_level|default('clear') %}
+        
+        {% if tlp_order[freq_tlp_level]|default(1) <= tlp_order[report_level]|default(4) %}
+        <div class="metadata-item">
+            <span class="metadata-label">Frequency:</span> 
+            {% if freq_tlp_level != 'clear' %}
+                <span class="tlp portion-marking tlp-{{ freq_tlp_level }}">TLP:{{ freq_tlp_level }}</span>
+            {% endif %}
+            {{ query_data.frequency }}
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    {% if query_data.priority %}
+        {% set priority_tlp_level = query_data.priority_tlp_level|default('clear') %}
+        {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+        {% set report_level = tlp_level|default('clear') %}
+        
+        {% if tlp_order[priority_tlp_level]|default(1) <= tlp_order[report_level]|default(4) %}
+        <div class="metadata-item">
+            <span class="metadata-label">Priority:</span>
+            {% if priority_tlp_level != 'clear' %}
+                <span class="tlp portion-marking tlp-{{ priority_tlp_level }}">TLP:{{ priority_tlp_level }}</span>
+            {% endif %}
+            {{ query_data.priority }}
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    {% if query_data.tags %}
+        {% set tags_tlp_level = query_data.tags_tlp_level|default('clear') %}
+        {% set tlp_order = {'clear': 1, 'white': 1, 'green': 2, 'amber': 3, 'red': 4} %}
+        {% set report_level = tlp_level|default('clear') %}
+        
+        {% if tlp_order[tags_tlp_level]|default(1) <= tlp_order[report_level]|default(4) %}
+        <div class="metadata-item">
+            <span class="metadata-label">Tags:</span>
+            {% if tags_tlp_level != 'clear' %}
+                <span class="tlp portion-marking tlp-{{ tags_tlp_level }}">TLP:{{ tags_tlp_level }}</span>
+            {% endif %}
+            {% for tag in query_data.tags %}
+            <span class="tag">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endif %}

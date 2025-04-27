@@ -1,0 +1,36 @@
+<div class="result-card">
+    {% if result.base64_screenshot %}
+    <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+    {% elif result.local_screenshot %}
+    <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+    {% endif %}
+    
+    <dl class="result-info">
+        {% if is_group_report %}
+        <dt>Source Query:</dt>
+        <dd>{{ result.source_query }}</dd>
+        {% endif %}
+
+        <dt>URL:</dt>
+        <dd class="url">
+            {{ result.defanged_url if result.defanged_url else result.page.url }}
+        </dd>
+        
+        <dt>Domain:</dt>
+        <dd>{{ result.defanged_domain if result.defanged_domain else result.page.domain }}</dd>
+        
+        <dt>Page Title:</dt>
+        <dd>{{ result.page.title }}</dd>
+        
+        <dt>IP Address:</dt>
+        <dd>{{ result.page.ip }}</dd>
+        
+        <dt>Scan Date:</dt>
+        <dd>{{ result.task.time }}</dd>
+        
+        <dt>Query Link:</dt>
+        <dd>
+            <a href="https://urlscan.io/result/{{ result.task.uuid }}/" target="_blank">View Full Scan</a>
+        </dd>
+    </dl>
+</div>
