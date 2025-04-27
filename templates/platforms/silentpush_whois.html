@@ -1,33 +1,35 @@
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">WHOIS Information for: {{ result.domain }}</h5>
-        <small class="text-muted">Scan Date: {{ result.scan_date }}</small>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Domain Information</h6>
-                <ul class="list-group mb-3">
-                    <li class="list-group-item"><strong>Domain:</strong> {{ result.domain }}</li>
-                    <li class="list-group-item"><strong>Registrar:</strong> {{ result.registrar }}</li>
-                    <li class="list-group-item"><strong>Created:</strong> {{ result.created }}</li>
-                    <li class="list-group-item"><strong>Updated:</strong> {{ result.updated }}</li>
-                    <li class="list-group-item"><strong>Expires:</strong> {{ result.expires }}</li>
-                    <li class="list-group-item"><strong>Nameservers:</strong> {{ result.nameserver }}</li>
-                </ul>
-            </div>
-            <div class="col-md-6">
-                <h6>Registrant Information</h6>
-                <ul class="list-group">
-                    <li class="list-group-item"><strong>Name:</strong> {{ result.name }}</li>
-                    <li class="list-group-item"><strong>Organization:</strong> {{ result.organization }}</li>
-                    <li class="list-group-item"><strong>Email:</strong> {{ result.email }}</li>
-                    <li class="list-group-item"><strong>Address:</strong> {{ result.address }}</li>
-                    <li class="list-group-item"><strong>City:</strong> {{ result.city }}</li>
-                    <li class="list-group-item"><strong>State/Province:</strong> {{ result.state }}</li>
-                    <li class="list-group-item"><strong>Country:</strong> {{ result.country }}</li>
-                    <li class="list-group-item"><strong>Postal Code:</strong> {{ result.zipcode }}</li>
-                </ul>
+<div class="result-card">
+    <div class="silentpush-result card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">WHOIS Information for: {{ result.domain }}</h5>
+            <small class="text-muted">Scan Date: {{ result.scan_date }}</small>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Domain Information</h6>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item"><strong>Domain:</strong> {{ result.domain }}</li>
+                        <li class="list-group-item"><strong>Registrar:</strong> {{ result.registrar }}</li>
+                        <li class="list-group-item"><strong>Created:</strong> {{ result.created }}</li>
+                        <li class="list-group-item"><strong>Updated:</strong> {{ result.updated }}</li>
+                        <li class="list-group-item"><strong>Expires:</strong> {{ result.expires }}</li>
+                        <li class="list-group-item"><strong>Nameservers:</strong> {{ result.nameserver }}</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Registrant Information</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Name:</strong> {{ result.name }}</li>
+                        <li class="list-group-item"><strong>Organization:</strong> {{ result.organization }}</li>
+                        <li class="list-group-item"><strong>Email:</strong> {{ result.email }}</li>
+                        <li class="list-group-item"><strong>Address:</strong> {{ result.address }}</li>
+                        <li class="list-group-item"><strong>City:</strong> {{ result.city }}</li>
+                        <li class="list-group-item"><strong>State/Province:</strong> {{ result.state }}</li>
+                        <li class="list-group-item"><strong>Country:</strong> {{ result.country }}</li>
+                        <li class="list-group-item"><strong>Postal Code:</strong> {{ result.zipcode }}</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

@@ -1,8 +1,10 @@
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">SilentPush Result</h5>
-    </div>
-    <div class="card-body">
-        <pre class="json-content">{{ result.raw_data | tojson(indent=2) }}</pre>
+<div class="result-card">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">SilentPush Result</h5>
+        </div>
+        <div class="card-body">
+            <pre class="json-content">{{ result.raw_data | tojson(indent=2) }}</pre>
+        </div>
     </div>
 </div>

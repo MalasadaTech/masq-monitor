@@ -1,8 +1,12 @@
 <div class="result-card">
-    {% if result.base64_screenshot %}
-    <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
-    {% elif result.local_screenshot %}
-    <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+    {% if result.base64_screenshot or result.local_screenshot %}
+    <div class="screenshot-container">
+        {% if result.base64_screenshot %}
+        <img src="data:image/png;base64,{{ result.base64_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+        {% elif result.local_screenshot %}
+        <img src="{{ result.local_screenshot }}" alt="Screenshot of {{ result.page.url }}" class="thumbnail">
+        {% endif %}
+    </div>
     {% endif %}
     
     <dl class="result-info">

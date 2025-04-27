@@ -1,6 +1,12 @@
 # Changelog
 
 ## April 27, 2025
+- Added result numbering to reports to simplify referencing specific results during analysis
+- Positioned numbers in the top-left corner of each result card for clear visibility
+- Ensured consistent numbering across different result types (URLScan, SilentPush WHOIS, etc.)
+- Added proper padding to prevent number overlapping with screenshots and content
+- Implemented numbered results for both individual query reports and group reports
+- Maintained styling consistency between light and dark themes for result numbers
 - Implemented modular template system with components for easier maintenance and extension
 - Created separate template components for different parts of the report (header, footer, styles, etc.)
 - Added platform-specific templates for different result types
