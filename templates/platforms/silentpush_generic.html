@@ -4,7 +4,112 @@
             <h5 class="mb-0">SilentPush Result</h5>
         </div>
         <div class="card-body">
-            <pre class="json-content">{{ result.raw_data | tojson(indent=2) }}</pre>
+            {% macro render_value(value) %}
+                {% if value is mapping %}
+                    <table class="table table-sm table-bordered">
+                        <tbody>
+                            {% for key, val in value.items() %}
+                                <tr>
+                                    <td width="30%"><strong>{{ key|capitalize|replace('_', ' ') }}</strong></td>
+                                    <td>{{ render_value(val) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% elif value is sequence and value is not string %}
+                    {% if value|length > 0 %}
+                        {% if value[0] is mapping %}
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        {% for key in value[0].keys() %}
+                                            <th>{{ key|capitalize|replace('_', ' ') }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in value %}
+                                        <tr>
+                                            {% for val in item.values() %}
+                                                <td>{{ render_value(val) }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <ul class="mb-0 ps-3">
+                                {% for item in value %}
+                                    <li>{{ render_value(item) }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% else %}
+                        <em>Empty list</em>
+                    {% endif %}
+                {% else %}
+                    {{ value }}
+                {% endif %}
+            {% endmacro %}
+
+            {# Handle different result formats #}
+            {% set data_to_render = {} %}
+            
+            {# Case 1: Direct object result #}
+            {% if result is mapping %}
+                {% if result.raw_data is defined %}
+                    {# Case 2: Object with raw_data property that might be a string or object #}
+                    {% if result.raw_data is string %}
+                        {# Case 2a: String raw_data (can't parse in template) #}
+                        {% set data_to_render = result %}
+                    {% else %}
+                        {# Case 2b: Object raw_data #}
+                        {% set data_to_render = result.raw_data %}
+                    {% endif %}
+                {% else %}
+                    {# Case 1: Direct object result #}
+                    {% set data_to_render = result %}
+                {% endif %}
+            {% endif %}
+            
+            {# Render the table with the data #}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if data_to_render %}
+                        {% for key, value in data_to_render.items() %}
+                            {% if key != 'raw_data' %}
+                                <tr>
+                                    <td width="30%"><strong>{{ key|capitalize|replace('_', ' ') }}</strong></td>
+                                    <td>{{ render_value(value) }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {# If we're dealing with an array, show the first item #}
+                        {% if result is sequence and result is not string and result|length > 0 %}
+                            {% set first_item = result[0] %}
+                            {% if first_item is mapping %}
+                                {% for key, value in first_item.items() %}
+                                    <tr>
+                                        <td width="30%"><strong>{{ key|capitalize|replace('_', ' ') }}</strong></td>
+                                        <td>{{ render_value(value) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="2">{{ render_value(first_item) }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

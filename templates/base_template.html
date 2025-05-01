@@ -64,7 +64,9 @@
                                 {% set result = section_results[i] %}
                                 <div class="result-container">
                                     <div class="result-number">#{{ i+1 }}</div>
+                                    <!-- Begin template: {{ get_platform_template(result) }} -->
                                     {% include get_platform_template(result) %}
+                                    <!-- End template: {{ get_platform_template(result) }} -->
                                 </div>
                             {% endfor %}
                             </div>
@@ -78,7 +80,9 @@
                             {% set result = results[i] %}
                             <div class="result-container">
                                 <div class="result-number">#{{ i+1 }}</div>
+                                <!-- Begin template: {{ get_platform_template(result) }} -->
                                 {% include get_platform_template(result) %}
+                                <!-- End template: {{ get_platform_template(result) }} -->
                             </div>
                         {% endfor %}
                     {% else %}
@@ -88,7 +92,9 @@
                             {% set result = results[i] %}
                             <div class="result-container">
                                 <div class="result-number">#{{ i+1 }}</div>
+                                <!-- Begin template: platforms/urlscan_result.html -->
                                 {% include 'platforms/urlscan_result.html' %}
+                                <!-- End template: platforms/urlscan_result.html -->
                             </div>
                         {% endfor %}
                         </div>

@@ -10,6 +10,148 @@ import jinja2
 import re
 from urllib.parse import urlparse
 
+# Add debugging utilities
+def debug_result_object(prefix, result_obj, max_depth=5):
+    """Debug a result object by printing its structure.
+    
+    Args:
+        prefix: A prefix to add to each debug line for context
+        result_obj: The result object to debug
+        max_depth: Maximum depth for nested objects
+    """
+    debug_file = Path("debug_output.log")
+    with open(debug_file, 'a', encoding='utf-8') as f:
+        f.write(f"\n\n{'='*80}\n")
+        f.write(f"DEBUG {prefix} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"{'='*80}\n")
+        f.write(f"Type: {type(result_obj)}\n")
+        
+        def print_obj(obj, curr_depth=0, max_len=100):
+            if curr_depth >= max_depth:
+                return "... (max depth reached)"
+            
+            if isinstance(obj, dict):
+                result = "{\n"
+                for k, v in obj.items():
+                    if isinstance(v, (dict, list)) and curr_depth < max_depth - 1:
+                        val_repr = print_obj(v, curr_depth + 1)
+                    else:
+                        try:
+                            if isinstance(v, str) and len(v) > max_len:
+                                val_repr = f"{v[:max_len]}... (truncated)"
+                            else:
+                                val_repr = repr(v)
+                        except:
+                            val_repr = "ERROR RENDERING VALUE"
+                    
+                    indent = "  " * (curr_depth + 1)
+                    result += f"{indent}{repr(k)}: {val_repr},\n"
+                result += "  " * curr_depth + "}"
+                return result
+            elif isinstance(obj, list):
+                if not obj:
+                    return "[]"
+                result = "[\n"
+                for item in obj[:10]:  # Limit to first 10 items
+                    if isinstance(item, (dict, list)) and curr_depth < max_depth - 1:
+                        item_repr = print_obj(item, curr_depth + 1)
+                    else:
+                        try:
+                            if isinstance(item, str) and len(item) > max_len:
+                                item_repr = f"{item[:max_len]}... (truncated)"
+                            else:
+                                item_repr = repr(item)
+                        except:
+                            item_repr = "ERROR RENDERING VALUE"
+                    
+                    indent = "  " * (curr_depth + 1)
+                    result += f"{indent}{item_repr},\n"
+                
+                if len(obj) > 10:
+                    indent = "  " * (curr_depth + 1)
+                    result += f"{indent}... ({len(obj) - 10} more items)\n"
+                result += "  " * curr_depth + "]"
+                return result
+            else:
+                return repr(obj)
+        
+        f.write(print_obj(result_obj))
+        f.write("\n")
+
+def debug_template_context(template_name, context):
+    """Debug the context passed to a template.
+    
+    Args:
+        template_name: Name of the template being rendered
+        context: The context dictionary passed to the template
+    """
+    debug_file = Path("debug_template.log")
+    with open(debug_file, 'a', encoding='utf-8') as f:
+        f.write(f"\n\n{'='*80}\n")
+        f.write(f"TEMPLATE DEBUG - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"{'='*80}\n")
+        f.write(f"Template: {template_name}\n")
+        f.write(f"Context Keys:\n")
+        
+        # Print top-level context keys and types
+        for key, value in context.items():
+            if key == 'results':
+                f.write(f"- {key}: {type(value)} with {len(value)} items\n")
+                # Print the first result in detail
+                if value and len(value) > 0:
+                    f.write(f"  First result type: {type(value[0])}\n")
+                    if isinstance(value[0], dict):
+                        f.write("  First result keys:\n")
+                        for result_key in value[0].keys():
+                            f.write(f"    - {result_key}\n")
+                    else:
+                        f.write(f"  First result value: {repr(value[0])}\n")
+            else:
+                f.write(f"- {key}: {type(value)}\n")
+
+def debug_html_output(html_content, output_path):
+    """Debug the generated HTML output, focusing on table content.
+    
+    Args:
+        html_content: The HTML content to analyze
+        output_path: Path where the HTML was saved
+    """
+    debug_file = Path("debug_html.log")
+    with open(debug_file, 'a', encoding='utf-8') as f:
+        f.write(f"\n\n{'='*80}\n")
+        f.write(f"HTML DEBUG - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"{'='*80}\n")
+        f.write(f"Output path: {output_path}\n")
+        
+        # Check for table elements
+        table_count = html_content.count('<table')
+        f.write(f"Found {table_count} table elements\n")
+        
+        # Extract and show table content
+        table_pattern = re.compile(r'<table[^>]*>(.*?)</table>', re.DOTALL)
+        tables = table_pattern.findall(html_content)
+        
+        for i, table_content in enumerate(tables[:3]):  # Limit to first 3 tables
+            f.write(f"\nTable #{i+1} (truncated):\n")
+            max_len = 500
+            if len(table_content) > max_len:
+                f.write(f"{table_content[:max_len]}... (truncated)\n")
+            else:
+                f.write(f"{table_content}\n")
+        
+        if len(tables) > 3:
+            f.write(f"\n... ({len(tables) - 3} more tables)\n")
+            
+        # Also look specifically for result cards
+        result_card_count = html_content.count('result-card')
+        f.write(f"\nFound {result_card_count} result cards\n")
+        
+        # Count and extract platform-specific templates used
+        platform_templates = re.findall(r'<!-- Begin template: (.*?) -->', html_content)
+        f.write(f"\nPlatform templates used ({len(platform_templates)}):\n")
+        for template in platform_templates:
+            f.write(f"- {template}\n")
+
 # Import template registry
 def import_template_registry():
     """Import template registry module."""
@@ -183,11 +325,16 @@ class ReportGenerator:
                             elif data_type == "webscan":
                                 processed_result = self._process_silentpush_webscan(record)
                             else:
-                                # Generic fallback for unknown data types
-                                processed_result = {
-                                    "data_type": "generic",
-                                    "raw_data": json.dumps(record, indent=2)
-                                }
+                                # Check if this is a domain search result
+                                if "host" in record and ("asn_diversity" in record or "ip_diversity_all" in record):
+                                    # For domain search, pass the raw record through without wrapping
+                                    processed_result = record
+                                else:
+                                    # Generic fallback for unknown data types
+                                    processed_result = {
+                                        "data_type": "generic",
+                                        "raw_data": record
+                                    }
                                 
                             processed_results.append(processed_result)
                         
@@ -214,22 +361,32 @@ class ReportGenerator:
                 for result in results:
                     if not isinstance(result, dict):
                         continue
-                        
-                    # Determine the data type based on the record fields
-                    data_type = self._determine_silentpush_data_type(result)
                     
-                    if data_type == "whois":
-                        processed_result = self._process_silentpush_whois(result)
-                    elif data_type == "webscan":
-                        processed_result = self._process_silentpush_webscan(result)
+                    # DEBUG: Print the keys in the first result to understand what fields are available
+                    if len(processed_results) == 0:
+                        print(f"DEBUG: Keys in first result: {list(result.keys())}")
+                    
+                    # Check if this is a domain search result first
+                    if "host" in result and ("asn_diversity" in result or "ip_diversity_all" in result):
+                        # For domain search, pass the raw result through without wrapping
+                        print(f"DEBUG: Found domain search result with host: {result.get('host')}")
+                        processed_results.append(result)
                     else:
-                        # Generic fallback for unknown data types
-                        processed_result = {
-                            "data_type": "generic",
-                            "raw_data": json.dumps(result, indent=2)
-                        }
+                        # Determine the data type based on the record fields for other types
+                        data_type = self._determine_silentpush_data_type(result)
                         
-                    processed_results.append(processed_result)
+                        if data_type == "whois":
+                            processed_result = self._process_silentpush_whois(result)
+                        elif data_type == "webscan":
+                            processed_result = self._process_silentpush_webscan(result)
+                        else:
+                            # Generic fallback for unknown data types
+                            processed_result = {
+                                "data_type": "generic",
+                                "raw_data": result
+                            }
+                            
+                        processed_results.append(processed_result)
             else:
                 # Unrecognized format
                 processed_results.append({
@@ -255,6 +412,9 @@ class ReportGenerator:
         # Use the provided timestamp or generate current time
         current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # Debug processed results
+        debug_result_object("Processed Results", processed_results)
+
         # Render the HTML report
         html_content = template.render(
             query_name=query_name,
@@ -266,6 +426,18 @@ class ReportGenerator:
             platform=platform,
             debug=False
         )
+        
+        # Debug template context
+        debug_template_context("base_template.html", {
+            "query_name": query_name,
+            "query_data": query_config,
+            "timestamp": current_timestamp,
+            "results": processed_results,
+            "username": self.config.get("report_username", ""),
+            "tlp_level": report_tlp,
+            "platform": platform,
+            "debug": False
+        })
         
         # Remove blank lines from HTML content
         html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
@@ -282,7 +454,10 @@ class ReportGenerator:
         
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-            
+        
+        # Debug HTML output
+        debug_html_output(html_content, report_path)
+        
         print(f"Report generated in {run_dir}")
         return report_path
 
@@ -357,7 +532,7 @@ class ReportGenerator:
         for query_name, query_data in group_results.items():
             if isinstance(query_data, dict) and query_data.get("type") == "query_group":
                 # Handle nested query groups
-                query_config = self.config["queries"][query_name]
+                query_config = self.config["queries"].get(query_name)
                 query_sections.append({
                     "name": query_name,
                     "type": "query_group",
@@ -368,7 +543,7 @@ class ReportGenerator:
                 self.process_nested_group_results(query_data["results"], flattened_results, img_dir)
             else:
                 # Handle individual query results
-                query_config = self.config["queries"][query_name]
+                query_config = self.config["queries"].get(query_name)
                 results = query_data
                 
                 # Add this query's section info
@@ -399,6 +574,9 @@ class ReportGenerator:
                     result["source_query"] = query_name
                     flattened_results.append(result)
         
+        # Debug flattened results
+        debug_result_object("Flattened Group Results", flattened_results)
+
         # Generate the HTML report
         html_content = template.render(
             query_name=group_name,
@@ -411,6 +589,19 @@ class ReportGenerator:
             tlp_level=report_tlp,
             debug=False
         )
+        
+        # Debug template context
+        debug_template_context("base_template.html", {
+            "query_name": group_name,
+            "query_data": group_config,
+            "timestamp": current_timestamp,
+            "results": flattened_results,
+            "is_group_report": True,
+            "query_sections": query_sections,
+            "username": self.config.get("report_username", ""),
+            "tlp_level": report_tlp,
+            "debug": False
+        })
         
         # Remove blank lines from HTML content
         html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
@@ -427,7 +618,10 @@ class ReportGenerator:
         
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-            
+        
+        # Debug HTML output
+        debug_html_output(html_content, report_path)
+        
         print(f"Group report generated in {run_dir} with {len(flattened_results)} total results")
         return report_path
         
@@ -576,8 +770,19 @@ class ReportGenerator:
         img_dir = run_dir / "images"
         img_dir.mkdir(exist_ok=True)
         
-        # Generate the HTML report using the provided results
-        return self.generate_html_report(results, query_name, run_dir, report_tlp)
+        # Handle Silent Push results specially to ensure proper table rendering
+        if platform == "silentpush":
+            # For all Silent Push results, we don't want to wrap them in a data_type container
+            # Instead, pass them directly to the template so the template registry can identify the right template
+            if isinstance(results, list):
+                # The results are a list, we'll process them directly
+                return self.generate_html_report(results, query_name, run_dir, report_tlp)
+            else:
+                # If it's not a list, wrap it in one for consistent handling
+                return self.generate_html_report([results], query_name, run_dir, report_tlp)
+        else:
+            # For other platforms (like urlscan), use standard processing
+            return self.generate_html_report(results, query_name, run_dir, report_tlp)
 
     def _is_tlp_visible(self, item_tlp, report_tlp):
         """
