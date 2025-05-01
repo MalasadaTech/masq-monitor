@@ -4,12 +4,12 @@ A Python application to help automate monitoring for website masquerades using u
 
 ## Overview
 
-Masquerade Monitor can help you track potential phishing campaigns (or other campaigns) by searching for websites mimicking legitimate brands. The tool queries search platforms like urlscan.io for new scans that match your monitoring criteria, saving the results as HTML reports with thumbnail previews.
+Masquerade Monitor can help you track potential phishing campaigns (or other campaigns) by searching for websites mimicking legitimate brands. The tool queries search platforms for new scans that match your monitoring criteria, saving the results as HTML reports with thumbnail previews.
 
 The basic idea:
 It takes a list of monitoring pivots, and performs API calls to check if there is anything new since the last check.
 
-It currently supports urlscan.io requests and the Silent Push API (as of April 2025). urlscan.io is used because they allow free API searches that should suffice for basic monitoring.
+It currently supports urlscan.io requests and the Silent Push API (as of April 2025, the results rendering is not yet optimized).
 
 ## Features
 
