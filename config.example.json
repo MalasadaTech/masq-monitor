@@ -454,6 +454,28 @@
                 "whois",
                 "malasadatech"
             ]
+        },
+        "malasadatech-domainsearch": {
+            "description": "Query to find malasadatech using the domain search endpoint.",
+            "query": "domain=malasada.tech",
+            "endpoint": "/explore/domain/search",
+            "platform": "silentpush",
+            "last_run": "2025-04-30T16:57:42.527492",
+            "reference": "https://malasada.tech",
+            "titles": [
+                {
+                    "title": "Query to find malasadatech using the domain search endpoint.",
+                    "tlp_level": "clear"
+                }
+            ],
+            "notes": "Query to find malasadatech using the domain search endpoint.",
+            "frequency": "weekly",
+            "priority": "medium",
+            "tags": [
+                "silentpush",
+                "malasadatech",
+                "example"
+            ]
         }
     }
 }

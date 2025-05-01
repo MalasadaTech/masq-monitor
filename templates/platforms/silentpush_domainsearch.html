@@ -1,0 +1,104 @@
+{% if result %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Domain Information</h5>
+    </div>
+    <div class="card-body">
+        <style>
+            .domain-info-table th {
+                padding: 10px 15px;
+                text-align: left;
+                border: 1px solid var(--border-color, #dee2e6);
+                background-color: var(--header-bg, #f8f9fa);
+                color: var(--header-color, #212529);
+                font-weight: 600;
+            }
+            .domain-info-table td {
+                padding: 8px 15px;
+                text-align: center;
+                border: 1px solid var(--border-color, #dee2e6);
+            }
+            .domain-info-table {
+                border-collapse: separate;
+                border-spacing: 0;
+                width: 100%;
+                border: 2px solid var(--border-color, #dee2e6);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            
+            /* Dark mode overrides */
+            @media (prefers-color-scheme: dark), (data-theme="dark") {
+                :root {
+                    --header-bg: #343a40;
+                    --header-color: #f8f9fa;
+                    --border-color: #495057;
+                }
+            }
+            
+            body.dark-theme .domain-info-table th {
+                background-color: #343a40;
+                color: #f8f9fa;
+                border-color: #495057;
+            }
+            
+            body.dark-theme .domain-info-table td,
+            body.dark-theme .domain-info-table {
+                border-color: #495057;
+            }
+        </style>
+        <table class="table table-striped domain-info-table">
+            <thead>
+                <tr>
+                    <th>Domain</th>
+                    <th>ASN Diversity</th>
+                    <th>IP Diversity (All)</th>
+                    <th>IP Diversity (Groups)</th>
+                    {% for key in result.keys() %}
+                        {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
+                            <th>{{ key|capitalize|replace('_', ' ') }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ result.host|default('N/A') }}</td>
+                    <td>{{ result.asn_diversity|default('N/A') }}</td>
+                    <td>{{ result.ip_diversity_all|default('N/A') }}</td>
+                    <td>{{ result.ip_diversity_groups|default('N/A') }}</td>
+                    {% for key in result.keys() %}
+                        {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
+                            <td>{{ result[key] }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+        
+        {% if result.timeline %}
+        <h6 class="mt-4 mb-2">IP Timeline</h6>
+        <table class="table table-sm table-striped domain-info-table">
+            <thead>
+                <tr>
+                    <th>IP Address</th>
+                    <th>ASN</th>
+                    <th>First Seen</th>
+                    <th>Last Seen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in result.timeline %}
+                <tr>
+                    <td>{{ entry.ip }}</td>
+                    <td>{{ entry.asn }}</td>
+                    <td>{{ entry.first_seen }}</td>
+                    <td>{{ entry.last_seen }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

@@ -110,6 +110,21 @@ class MasqMonitor:
         
         print(f"Using platform: {platform}")
         
+        # Get the endpoint for Silent Push queries
+        endpoint = None
+        is_scandata_query = True  # Default assumption for backward compatibility
+        if platform == "silentpush":
+            endpoint = query_config.get("endpoint")
+            # Check if this is a scandata query (either using default endpoint or explicitly set to scandata endpoint)
+            if endpoint:
+                is_scandata_query = "scandata" in endpoint
+            else:
+                # Using default endpoint which is scandata
+                is_scandata_query = True
+                endpoint = "/explore/scandata/search/raw"
+            print(f"Using endpoint: {endpoint}")
+            print(f"Is scandata query: {is_scandata_query}")
+        
         # Create the query string, adding date filter based on last_run or days parameter
         query_string = query_config["query"]
         
@@ -117,42 +132,54 @@ class MasqMonitor:
         if days is not None:
             # Explicit days parameter takes precedence
             date_from = datetime.datetime.now() - datetime.timedelta(days=days)
-            if platform == "silentpush":
-                # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+            if platform == "silentpush" and is_scandata_query:
+                # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push scandata queries
                 date_from_str = date_from.strftime("%Y-%m-%dT%H:%M:%SZ")
                 query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                print(f"Running query: {query_name} (limited to {days} days from {date_from_str})")
+            elif platform == "silentpush":
+                # For non-scandata Silent Push queries, don't add date filter
+                print(f"Running query: {query_name} (date filtering not applicable for this endpoint)")
             else:
                 # Format as YYYY-MM-DD for urlscan.io
                 date_from_str = date_from.strftime("%Y-%m-%d")
                 query_string = f"{query_string} AND date:>={date_from_str}"
-            print(f"Running query: {query_name} (limited to {days} days from {date_from_str})")
+                print(f"Running query: {query_name} (limited to {days} days from {date_from_str})")
         elif "last_run" in query_config and query_config["last_run"]:
             # Use last run time if available
             try:
                 last_run = datetime.datetime.fromisoformat(query_config["last_run"])
-                if platform == "silentpush":
-                    # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                if platform == "silentpush" and is_scandata_query:
+                    # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push scandata queries
                     date_from_str = last_run.strftime("%Y-%m-%dT%H:%M:%SZ")
                     query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                    print(f"Running query: {query_name} (from last run on {date_from_str})")
+                elif platform == "silentpush":
+                    # For non-scandata Silent Push queries, don't add date filter
+                    print(f"Running query: {query_name} (date filtering not applicable for this endpoint)")
                 else:
                     # Format as YYYY-MM-DD for urlscan.io
                     date_from_str = last_run.strftime("%Y-%m-%d")
                     query_string = f"{query_string} AND date:>={date_from_str}"
-                print(f"Running query: {query_name} (from last run on {date_from_str})")
+                    print(f"Running query: {query_name} (from last run on {date_from_str})")
             except (ValueError, TypeError):
                 # Fall back to default_days if last_run is invalid
                 default_days = self.config.get("default_days")
                 if default_days is not None:
                     date_from = datetime.datetime.now() - datetime.timedelta(days=default_days)
-                    if platform == "silentpush":
-                        # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                    if platform == "silentpush" and is_scandata_query:
+                        # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push scandata queries
                         date_from_str = date_from.strftime("%Y-%m-%dT%H:%M:%SZ")
                         query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                        print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
+                    elif platform == "silentpush":
+                        # For non-scandata Silent Push queries, don't add date filter
+                        print(f"Running query: {query_name} (date filtering not applicable for this endpoint)")
                     else:
                         # Format as YYYY-MM-DD for urlscan.io
                         date_from_str = date_from.strftime("%Y-%m-%d")
                         query_string = f"{query_string} AND date:>={date_from_str}"
-                    print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
+                        print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
                 else:
                     print(f"Running query: {query_name} (no date filter)")
         else:
@@ -160,15 +187,19 @@ class MasqMonitor:
             default_days = self.config.get("default_days")
             if default_days is not None:
                 date_from = datetime.datetime.now() - datetime.timedelta(days=default_days)
-                if platform == "silentpush":
-                    # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push
+                if platform == "silentpush" and is_scandata_query:
+                    # Format as YYYY-MM-DDTHH:MM:SSZ for Silent Push scandata queries
                     date_from_str = date_from.strftime("%Y-%m-%dT%H:%M:%SZ")
                     query_string = f"{query_string} AND scan_date >= \"{date_from_str}\""
+                    print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
+                elif platform == "silentpush":
+                    # For non-scandata Silent Push queries, don't add date filter
+                    print(f"Running query: {query_name} (date filtering not applicable for this endpoint)")
                 else:
                     # Format as YYYY-MM-DD for urlscan.io
                     date_from_str = date_from.strftime("%Y-%m-%d")
                     query_string = f"{query_string} AND date:>={date_from_str}"
-                print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
+                    print(f"Running query: {query_name} (limited to default {default_days} days from {date_from_str})")
             else:
                 print(f"Running query: {query_name} (no date filter)")
         
@@ -185,11 +216,12 @@ class MasqMonitor:
         client = None
         if platform == "silentpush":
             client = self.silentpush_client
+            # Execute the Silent Push query with the endpoint parameter
+            results = client.execute_query(query_string, endpoint=endpoint)
         else:  # Default to urlscan
             client = self.urlscan_client
-        
-        # Execute the query using the selected client
-        results = client.execute_query(query_string)
+            # Execute the urlscan query (no endpoint parameter needed)
+            results = client.execute_query(query_string)
         
         if results:
             # Download thumbnails for each result

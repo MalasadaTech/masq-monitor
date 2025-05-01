@@ -36,6 +36,7 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - API keys stored in .env file for better security
 - Automatic data type detection for Silent Push results (WHOIS vs webscan)
 - Specialized report formatting for different data types
+- Support for all Silent Push API endpoints with configurable endpoint parameter
 
 ## Example Monitoring Techniques
 
@@ -277,8 +278,9 @@ The configuration file is in JSON format with the following structure:
 - `report_username`: Your name or username to be displayed in generated reports.
 - `default_template_path`: The default template to use for all queries that don't have a specific template.
 - `queries`: A map of named queries to execute against search platforms.
-  - `platform`: Search platform to use for this query. Currently supported: "urlscan", "silentpush" (coming soon). Defaults to "urlscan" if not specified.
+  - `platform`: Search platform to use for this query. Currently supported: "urlscan", "silentpush". Defaults to "urlscan" if not specified.
   - `query`: The search query string formatted for the specified platform.
+  - `endpoint`: (Silent Push only) API endpoint to use. Should start with a leading slash (e.g., "/explore/domain/search"). If not specified, defaults to "/explore/scandata/search/raw" for scandata queries.
   - `last_run`: Timestamp of when the query was last executed. Used to limit searches to only new results since the last run.
   - `query_tlp_level`: TLP (Traffic Light Protocol) classification for the query itself. Determines how sensitive the search pattern is. Values: "clear", "white", "green", "amber", "red".
   - `default_tlp_level`: Default TLP classification for report content. Used for report elements without their own explicit TLP level. Values: "clear", "white", "green", "amber", "red".
@@ -328,6 +330,34 @@ domain:*paypal* AND page.title:*secure*
 ```
 hash:"fa6a5a3224d7da66d9e0bdec25f62cf0"
 ```
+
+### Silent Push Query Configuration
+
+For Silent Push queries, you can use any of the available API endpoints by specifying the `endpoint` parameter in your query configuration:
+
+```json
+{
+  "silentpush-domain-search": {
+    "platform": "silentpush",
+    "endpoint": "/explore/domain/search",
+    "query": "domain=example.com",
+    "description": "Search for domains matching example.com"
+  },
+  "silentpush-domain-info": {
+    "platform": "silentpush",
+    "endpoint": "/explore/domain/domaininfo/example.com",
+    "query": "",
+    "description": "Get detailed information about example.com"
+  },
+  "silentpush-scandata": {
+    "platform": "silentpush",
+    "query": "domain=*phish*",
+    "description": "Search for phishing domains in scandata (using default endpoint)"
+  }
+}
+```
+
+If no endpoint is specified for a Silent Push query, the system will default to `/explore/scandata/search/raw`, which is used for general scandata searches.
 
 ## Output
 

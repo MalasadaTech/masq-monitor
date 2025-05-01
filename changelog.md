@@ -1,5 +1,25 @@
 # Changelog
 
+## May 1, 2025
+- Fixed Silent Push API integration to only apply scan_date filter to scandata queries
+- Added intelligent endpoint detection to determine if a query is using the scandata endpoint
+- Added better logging to show which Silent Push endpoints are being used
+- Improved error handling for non-scandata Silent Push API endpoints
+- Updated query processing to preserve backwards compatibility
+- Fixed domain search endpoint integration by using GET requests with URL parameters instead of POST requests
+- Added support for different request formats required by different Silent Push API endpoints
+- Implemented parameter parsing for endpoints that use URL query parameters instead of request bodies
+
+## April 30, 2025
+- Implemented Silent Push Domain Search capability
+- Added support for all Silent Push API endpoints via configurable `endpoint` parameter
+- Modified SilentPushClient to use the new API base URL structure (`/api/v1/merge-api`)
+- Added proper handling of endpoints with leading slashes to match documentation
+- Updated MasqMonitor to pass the endpoint parameter to SilentPushClient
+- Default endpoint set to `/explore/scandata/search/raw` when none specified
+- Updated documentation to explain endpoint configuration for Silent Push queries
+- Fixed URL construction to ensure proper formatting regardless of how endpoints are specified
+
 ## April 27, 2025
 - Added result numbering to reports to simplify referencing specific results during analysis
 - Positioned numbers in the top-left corner of each result card for clear visibility

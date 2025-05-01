@@ -21,7 +21,8 @@ class TemplateRegistry:
         self.data_type_templates = {
             'whois': 'platforms/silentpush_whois.html',
             'webscan': 'platforms/silentpush_webscan.html',
-            'generic': 'platforms/silentpush_generic.html'
+            'generic': 'platforms/silentpush_generic.html',
+            'domainsearch': 'platforms/silentpush_domainsearch.html'  # New template for domain search results
         }
     
     def get_template_for_result(self, result):
@@ -44,6 +45,10 @@ class TemplateRegistry:
             # Check if we have a specific template for this data type
             if data_type in self.data_type_templates:
                 return self.data_type_templates[data_type]
+                
+        # Detect SilentPush domain search results
+        if 'host' in result and ('asn_diversity' in result or 'ip_diversity_all' in result or 'ip_diversity_groups' in result):
+            return self.data_type_templates['domainsearch']
         
         # Determine platform if possible
         platform = 'default'
