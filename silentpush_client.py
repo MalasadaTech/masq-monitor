@@ -17,7 +17,7 @@ class SilentPushClient:
             api_key: Optional. The API key for Silent Push API
         """
         self.api_key = api_key
-        self.base_url = "https://api.silentpush.com/api/v1"
+        self.base_url = "https://api.silentpush.com/api/v1/merge-api"
         # Set default timeout values (connect_timeout, read_timeout) in seconds
         self.connect_timeout = 30  # 30 seconds for connection
         self.read_timeout = 120    # 2 minutes to read data
@@ -116,11 +116,13 @@ class SilentPushClient:
         print(f"Raw API response saved to {filepath}")
         return filepath
         
-    def execute_query(self, query):
+    def execute_query(self, query, endpoint=None):
         """Execute a query against the Silent Push API.
         
         Args:
             query: The query string to search for
+            endpoint: Optional API endpoint to use (should start with a leading slash)
+                    (defaults to /explore/scandata/search/raw)
             
         Returns:
             List of results from the query
@@ -129,13 +131,17 @@ class SilentPushClient:
             print("Error: SilentPush API key is required to execute queries.")
             return []
         
-        # Preprocess the query to handle date formats correctly
-        formatted_query = self.prepare_query(query)
-        if formatted_query != query:
-            print(f"Query reformatted for SilentPush compatibility: {formatted_query}")
+        # Use the provided endpoint or default to scandata/search/raw
+        if endpoint is None:
+            endpoint = "/explore/scandata/search/raw"
         
-        # Set up the API endpoint for the merge-api search/raw endpoint
-        endpoint = f"{self.base_url}/merge-api/explore/scandata/search/raw"
+        # Ensure endpoint starts with a slash (as shown in the documentation)
+        if not endpoint.startswith('/'):
+            endpoint = f"/{endpoint}"
+        
+        # Set up the API endpoint - remove any trailing slash from base_url
+        base_url = self.base_url.rstrip('/')
+        api_endpoint = f"{base_url}{endpoint}"
         
         # Set up the headers with API key authentication
         headers = {
@@ -143,66 +149,136 @@ class SilentPushClient:
             "Content-Type": "application/json"
         }
         
-        # Set up the request payload according to the API documentation format
-        # {"query": "<query>", "fields":["<field1>","<field2>",...,"<fieldn>"], "sort": ["<field1>/<order>","<field2>/<order>",...,"<fieldn>/<order>"]}
-        payload = {
-            "query": formatted_query,  # The SPQL query as a single string in JSON format
-            # Uncomment and customize if you want specific fields
-            # "fields": ["domain", "scan_date", "registrar", "name", "email", "organization"],
-            "sort": ["scan_date/desc"]  # Sort by scan_date in descending order
-        }
+        # Determine if this is a domain search endpoint that uses GET with query parameters
+        is_get_request = False
+        if '/explore/domain/search' in endpoint or '/explore/padns/search' in endpoint:
+            is_get_request = True
+            print("Using GET request method with query parameters")
+        else:
+            # For scandata and other endpoints that use POST with query in body
+            formatted_query = self.prepare_query(query)
+            if formatted_query != query:
+                print(f"Query reformatted for SilentPush compatibility: {formatted_query}")
+            query = formatted_query
         
-        # Define parameters for the API request
-        params = {
-            "limit": 1000,  # Maximum number of results to return
-            "skip": 0,
-            "with_metadata": 1  # Return metadata about the search
-        }
+        # Parse parameters for GET requests
+        params = {}
+        if is_get_request:
+            # Parse query string into parameters for GET request
+            if query:
+                # Split by & to get individual parameters
+                param_pairs = query.split('&')
+                for pair in param_pairs:
+                    if '=' in pair:
+                        key, value = pair.split('=', 1)  # Split only on first =
+                        params[key.strip()] = value.strip()
+                    else:
+                        # Handle cases where there's a key without a value
+                        params[pair.strip()] = ''
+            
+            # Add common parameters
+            params["limit"] = 1000
+            params["with_metadata"] = 1
+        else:
+            # Set up the request payload for POST requests
+            params = {
+                "limit": 1000,
+                "skip": 0,
+                "with_metadata": 1
+            }
         
         try:
-            print(f"Executing SilentPush query: {formatted_query}")
+            if is_get_request:
+                print(f"Executing SilentPush GET query on endpoint: {endpoint}")
+                print(f"Parameters: {params}")
+            else:
+                print(f"Executing SilentPush POST query: {query}")
+                print(f"Using endpoint: {endpoint}")
+            
             print(f"Using timeouts: connect={self.connect_timeout}s, read={self.read_timeout}s")
             
             # Include explicit timeout values
             timeout = (self.connect_timeout, self.read_timeout)  # (connect_timeout, read_timeout)
             
-            # Create a prepared request to inspect before sending
-            prepared_request = requests.Request(
-                'POST', 
-                endpoint,
-                headers=headers,
-                json=payload,
-                params=params
-            ).prepare()
+            response = None
             
-            # Print the request details for debugging
-            print("\n=== PREPARED REQUEST DETAILS ===")
-            print(f"URL: {prepared_request.url}")
-            print("Headers:")
-            for header, value in prepared_request.headers.items():
-                # Hide the actual API key for security
-                if header.lower() == 'x-api-key':
-                    print(f"  {header}: {'*' * 10}")
-                else:
-                    print(f"  {header}: {value}")
-            
-            # Parse body back to JSON for pretty printing
-            print("Body:")
-            try:
-                body_json = json.loads(prepared_request.body.decode('utf-8'))
-                print(json.dumps(body_json, indent=2))
-            except:
-                print(f"  {prepared_request.body}")
-            print("=== END OF REQUEST DETAILS ===\n")
-            
-            # Send the actual request
-            response = requests.post(
-                endpoint, 
-                headers=headers, 
-                json=payload, 
-                params=params,
-                timeout=timeout  # Apply the timeouts
-            )
+            if is_get_request:
+                # Create a prepared request for GET to inspect before sending
+                prepared_request = requests.Request(
+                    'GET', 
+                    api_endpoint,
+                    headers=headers,
+                    params=params
+                ).prepare()
+                
+                # Print the request details for debugging
+                print("\n=== PREPARED REQUEST DETAILS ===")
+                print(f"URL: {prepared_request.url}")
+                print("Headers:")
+                for header, value in prepared_request.headers.items():
+                    # Hide the actual API key for security
+                    if header.lower() == 'x-api-key':
+                        print(f"  {header}: {'*' * 10}")
+                    else:
+                        print(f"  {header}: {value}")
+                
+                print("GET Parameters:")
+                print(params)
+                print("=== END OF REQUEST DETAILS ===\n")
+                
+                # Send the actual GET request
+                response = requests.get(
+                    api_endpoint, 
+                    headers=headers, 
+                    params=params,
+                    timeout=timeout
+                )
+            else:
+                # Set up the request payload for POST according to the API documentation format
+                payload = {
+                    "query": query,  # The SPQL query as a single string in JSON format
+                    # Uncomment and customize if you want specific fields
+                    # "fields": ["domain", "scan_date", "registrar", "name", "email", "organization"],
+                    "sort": ["scan_date/desc"]  # Sort by scan_date in descending order
+                }
+                
+                # Create a prepared request for POST to inspect before sending
+                prepared_request = requests.Request(
+                    'POST', 
+                    api_endpoint,
+                    headers=headers,
+                    json=payload,
+                    params=params
+                ).prepare()
+                
+                # Print the request details for debugging
+                print("\n=== PREPARED REQUEST DETAILS ===")
+                print(f"URL: {prepared_request.url}")
+                print("Headers:")
+                for header, value in prepared_request.headers.items():
+                    # Hide the actual API key for security
+                    if header.lower() == 'x-api-key':
+                        print(f"  {header}: {'*' * 10}")
+                    else:
+                        print(f"  {header}: {value}")
+                
+                # Parse body back to JSON for pretty printing
+                print("Body:")
+                try:
+                    body_json = json.loads(prepared_request.body.decode('utf-8'))
+                    print(json.dumps(body_json, indent=2))
+                except:
+                    print(f"  {prepared_request.body}")
+                print("=== END OF REQUEST DETAILS ===\n")
+                
+                # Send the actual POST request
+                response = requests.post(
+                    api_endpoint, 
+                    headers=headers, 
+                    json=payload, 
+                    params=params,
+                    timeout=timeout
+                )
             
             # Always save the raw response for debugging
             try:
@@ -222,7 +298,7 @@ class SilentPushClient:
                 print(f"{response.text[:1000]}..." if len(response.text) > 1000 else response.text)
                 print("=== END OF RESPONSE DETAILS ===\n")
                 
-            self.save_raw_response(formatted_query, response_data)
+            self.save_raw_response(query, response_data)
             
             if response.status_code == 200:
                 # Special handling for the nested response structure
@@ -234,13 +310,63 @@ class SilentPushClient:
                         results = response_obj["scandata_raw"]
                         print(f"Query executed successfully. Retrieved {len(results)} results.")
                         return results
+                    elif "records" in response_obj:
+                        # Handle domain search results
+                        results = response_obj["records"]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
+                    # Check for domain certificates
+                    elif "domain_certificates" in response_obj:
+                        results = response_obj["domain_certificates"]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
+                    # Check for domain information
+                    elif "domaininfo" in response_obj:
+                        # Handle direct domaininfo object and array cases
+                        domaininfo = response_obj["domaininfo"]
+                        if isinstance(domaininfo, list):
+                            results = domaininfo
+                        else:
+                            results = [domaininfo]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
+                    # Handle other potential response types
+                    elif "whois" in response_obj:
+                        results = response_obj["whois"]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
+                    # Check for nschanges
+                    elif "nschanges" in response_obj:
+                        results = [response_obj["nschanges"]]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
+                    # Check for domain infratag
+                    elif "infratag" in response_obj:
+                        results = [response_obj["infratag"]]
+                        print(f"Query executed successfully. Retrieved {len(results)} results.")
+                        return results
                     # Check for error in the response object
                     elif "error" in response_obj:
                         error_msg = response_obj.get("error", "Unknown error")
                         print(f"API returned an error: {error_msg}")
                         return []
-                
-                # Standard results field check
+                    else:
+                        # Generic handler for other response types
+                        print(f"Query executed successfully but response format not specifically handled.")
+                        print(f"Response structure: {self._describe_structure(response_obj)}")
+                        # Try to return any array or object we find
+                        for key, value in response_obj.items():
+                            if isinstance(value, list) and value:
+                                print(f"Returning array from key: {key}")
+                                return value
+                            elif isinstance(value, dict):
+                                print(f"Returning dict from key: {key} as a list")
+                                return [value]
+                        # If we didn't find any arrays, return the whole response object as a list
+                        print("Returning whole response object as a list")
+                        return [response_obj]
+                        
+                # For non-nested or direct response arrays
                 if "results" in response_data:
                     results = response_data["results"]
                     print(f"Query executed successfully. Retrieved {len(results)} results.")
@@ -248,17 +374,20 @@ class SilentPushClient:
                 else:
                     print(f"Query executed successfully but couldn't find results in the expected format.")
                     print(f"Response data structure: {self._describe_structure(response_data)}")
+                    # Try to return the response data itself if it contains useful information
+                    if isinstance(response_data, dict) and response_data:
+                        return [response_data]
                     return []
             else:
                 # For non-200 responses, still save what we can
-                self.save_raw_response(formatted_query, response_data, 
+                self.save_raw_response(query, response_data, 
                                      f"HTTP Error: {response.status_code}")
                 print(f"Error executing query: {response.status_code} - {response.text}")
                 return []
                 
         except requests.exceptions.Timeout as e:
             # Handle timeout specifically
-            self.save_raw_response(formatted_query, 
+            self.save_raw_response(query, 
                                   {"exception_occurred": True, "timeout_error": True},
                                   f"Timeout error: {str(e)} - Consider increasing timeout values.")
             print(f"Timeout when executing SilentPush query: {str(e)}")
@@ -266,7 +395,7 @@ class SilentPushClient:
             return []
         except requests.exceptions.ConnectionError as e:
             # Handle connection errors specifically
-            self.save_raw_response(formatted_query, 
+            self.save_raw_response(query, 
                                   {"exception_occurred": True, "connection_error": True},
                                   f"Connection error: {str(e)} - Check network connectivity.")
             print(f"Connection error when executing SilentPush query: {str(e)}")
@@ -274,7 +403,7 @@ class SilentPushClient:
             return []
         except Exception as e:
             # Save information about the exception
-            self.save_raw_response(formatted_query, {"exception_occurred": True}, str(e))
+            self.save_raw_response(query, {"exception_occurred": True}, str(e))
             print(f"Exception when executing SilentPush query: {str(e)}")
             return []
             
