@@ -576,3 +576,120 @@ class ReportGenerator:
         else:
             # For other platforms (like urlscan), use standard processing
             return self.generate_html_report(results, query_name, run_dir, report_tlp)
+
+    def _determine_silentpush_data_type(self, record):
+        """Determine the type of SilentPush data based on record fields.
+        
+        Args:
+            record: A SilentPush record dictionary
+            
+        Returns:
+            str: The identified data type (e.g., "whois", "webscan", etc.)
+        """
+        if not isinstance(record, dict):
+            return "unknown"
+            
+        # Check for WHOIS data
+        whois_indicators = ["registrar", "creation_date", "expiration_date", "registrant", "domain_status"]
+        if any(indicator in record for indicator in whois_indicators) or record.get("datasource") == "whois":
+            return "whois"
+            
+        # Check for WebScan data
+        webscan_indicators = ["html_body_sha256", "favicon_md5", "htmltitle", "redirect"]
+        if any(indicator in record for indicator in webscan_indicators) or record.get("datasource") == "webscan":
+            return "webscan"
+            
+        # Check for domain search data
+        if "host" in record and ("asn_diversity" in record or "ip_diversity_all" in record):
+            return "domain_search"
+            
+        # Default unknown type
+        return "unknown"
+        
+    def _process_silentpush_whois(self, record):
+        """Process a SilentPush WHOIS record.
+        
+        Args:
+            record: A SilentPush WHOIS record
+            
+        Returns:
+            dict: A processed record with added metadata
+        """
+        # Create a copy to avoid modifying the original
+        processed = dict(record)
+        
+        # Add the data type for template selection
+        processed["data_type"] = "whois"
+        
+        # Extract and format relevant dates
+        if "creation_date" in record and record["creation_date"]:
+            try:
+                # Handle Unix timestamp
+                if isinstance(record["creation_date"], (int, float)):
+                    processed["creation_date_formatted"] = datetime.datetime.fromtimestamp(
+                        record["creation_date"]).strftime("%Y-%m-%d")
+                else:
+                    # Try to parse as ISO format
+                    parsed_date = datetime.datetime.fromisoformat(record["creation_date"].replace('Z', '+00:00'))
+                    processed["creation_date_formatted"] = parsed_date.strftime("%Y-%m-%d")
+            except:
+                processed["creation_date_formatted"] = str(record["creation_date"])
+        
+        # Process expiration date similarly
+        if "expiration_date" in record and record["expiration_date"]:
+            try:
+                if isinstance(record["expiration_date"], (int, float)):
+                    processed["expiration_date_formatted"] = datetime.datetime.fromtimestamp(
+                        record["expiration_date"]).strftime("%Y-%m-%d")
+                else:
+                    parsed_date = datetime.datetime.fromisoformat(record["expiration_date"].replace('Z', '+00:00'))
+                    processed["expiration_date_formatted"] = parsed_date.strftime("%Y-%m-%d")
+            except:
+                processed["expiration_date_formatted"] = str(record["expiration_date"])
+        
+        # Defang domains
+        if "domain" in record:
+            processed["defanged_domain"] = self._defang_domain(record["domain"])
+            
+        return processed
+        
+    def _process_silentpush_webscan(self, record):
+        """Process a SilentPush WebScan record.
+        
+        Args:
+            record: A SilentPush WebScan record
+            
+        Returns:
+            dict: A processed record with added metadata
+        """
+        # Create a copy to avoid modifying the original
+        processed = dict(record)
+        
+        # Add the data type for template selection
+        processed["data_type"] = "webscan"
+        
+        # Store the original record as raw_record for template access
+        processed["raw_record"] = record
+        
+        # Defang URLs and domains
+        if "url" in record:
+            processed["defanged_url"] = self._defang_url(record["url"])
+            
+        if "domain" in record:
+            processed["defanged_domain"] = self._defang_domain(record["domain"])
+            
+        # Format scan date if present
+        if "scan_date" in record and record["scan_date"]:
+            try:
+                # Handle Unix timestamp
+                if isinstance(record["scan_date"], (int, float)):
+                    processed["scan_date_formatted"] = datetime.datetime.fromtimestamp(
+                        record["scan_date"]).strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    # Try to parse as ISO format
+                    parsed_date = datetime.datetime.fromisoformat(record["scan_date"].replace('Z', '+00:00'))
+                    processed["scan_date_formatted"] = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                processed["scan_date_formatted"] = str(record["scan_date"])
+                
+        return processed
