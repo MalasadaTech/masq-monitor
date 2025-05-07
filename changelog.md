@@ -1,6 +1,10 @@
 # Changelog
 
 ## May 6, 2025
+- Fixed SilentPush report generation by adding missing data type determination methods
+- Implemented `_determine_silentpush_data_type` method to properly identify webscan, whois, and domain search results
+- Added `_process_silentpush_webscan` method with proper raw record preservation for template access
+- Added `_process_silentpush_whois` method with date formatting and domain defanging
 - Enhanced Silent Push rendering for search types other than webscan and whois
 - Implemented consolidated table view for displaying multiple non-webscan/whois results in a single card
 - Added proper indexing for table rows with numbered entries
