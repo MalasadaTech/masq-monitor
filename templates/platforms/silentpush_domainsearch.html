@@ -11,19 +11,26 @@
                 background-color: var(--header-bg, #f8f9fa);
                 color: var(--header-color, #212529);
                 font-weight: 600;
+                position: relative; /* Required for resize handle positioning */
             }
             .domain-info-table td {
                 padding: 8px 15px;
                 border: 1px solid var(--border-color, #dee2e6);
+                white-space: nowrap; /* Prevent text from wrapping */
+                overflow: hidden; /* Hide overflow text */
+                text-overflow: ellipsis; /* Add ellipsis to truncated text */
+                max-width: 0; /* Force cell to respect width even with long content */
             }
             .domain-info-table {
                 border-collapse: separate;
                 border-spacing: 0;
-                width: 100%;
+                width: auto; /* Changed from 100% to auto to allow table to grow wider than container */
+                min-width: 100%; /* Ensure table is at least as wide as container */
                 border: 2px solid var(--border-color, #dee2e6);
                 border-radius: 4px;
                 overflow: hidden;
                 margin-bottom: 1rem;
+                table-layout: fixed; /* Control column widths based on first row */
             }
             
             /* Table container for horizontal scrolling */
@@ -47,12 +54,16 @@
                 background-color: var(--header-bg, #f8f9fa);
                 /* Add box-shadow for visual separation between header and content */
                 box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+                user-select: none; /* Prevent text selection during drag */
+                cursor: grab; /* Indicate that header is draggable */
+                white-space: nowrap; /* Prevent header text from wrapping */
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             
             /* Make sure table takes full width of container but allows scrolling */
             .table-container .domain-info-table {
                 margin-bottom: 0;
-                min-width: 100%;
             }
             
             /* Ensure index column stays visible when scrolling horizontally */
@@ -71,13 +82,97 @@
                 z-index: 15;
             }
             
-            /* Dark mode overrides */
+            /* Column resizing styles - improved for better visibility and usability */
+            .resizer {
+                position: absolute;
+                top: 0;
+                right: -3px; /* Move it outside the cell for better targeting */
+                width: 6px; /* Make it wider for easier clicking */
+                height: 100%;
+                cursor: col-resize;
+                user-select: none;
+                background-color: transparent;
+                z-index: 20; /* Make sure it's above the header */
+            }
+            
+            .resizer::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 50%;
+                width: 2px;
+                transform: translateX(-50%);
+                background-color: rgba(0,0,0,0.2);
+                height: 100%;
+                transition: background-color 0.3s, width 0.3s;
+            }
+            
+            .resizer:hover::after {
+                background-color: rgba(0,120,215,0.7);
+                width: 4px;
+            }
+            
+            .resizing .resizer::after {
+                background-color: rgba(0,120,215,0.9);
+                width: 4px;
+            }
+            
+            /* Style for the column when being dragged */
+            .dragging {
+                opacity: 0.5;
+                cursor: grabbing !important;
+            }
+            
+            /* Placeholder style for drag destination */
+            .drag-placeholder {
+                background-color: var(--header-bg, #f8f9fa);
+                border: 2px dashed var(--border-color, #dee2e6);
+            }
+            
+            /* Add tooltip for truncated text */
+            .domain-info-table td {
+                position: relative;
+            }
+            
+            .domain-info-table td:hover::after {
+                content: attr(data-full-text);
+                position: absolute;
+                left: 0;
+                bottom: 100%;
+                z-index: 20;
+                background: var(--tooltip-bg, #fff);
+                border: 1px solid var(--border-color, #dee2e6);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                padding: 5px 10px;
+                border-radius: 3px;
+                white-space: normal;
+                max-width: 300px;
+                word-break: break-all;
+                display: none;
+            }
+            
+            .domain-info-table td.truncated:hover::after {
+                display: block;
+            }
+            
+            /* Dark mode support */
             @media (prefers-color-scheme: dark), (data-theme="dark") {
                 :root {
                     --header-bg: #343a40;
                     --header-color: #f8f9fa;
                     --border-color: #495057;
                     --sticky-bg: #212529;
+                    --tooltip-bg: #343a40;
+                }
+                
+                .resizer::after {
+                    background-color: rgba(255,255,255,0.2);
+                }
+                
+                .resizer:hover::after,
+                .resizing .resizer::after {
+                    background-color: rgba(0,150,255,0.7);
                 }
             }
             
@@ -110,26 +205,26 @@
             <table class="table table-striped domain-info-table">
                 <thead>
                     <tr>
-                        <th>Domain</th>
-                        <th>ASN Diversity</th>
-                        <th>IP Diversity (All)</th>
-                        <th>IP Diversity (Groups)</th>
+                        <th>Domain<div class="resizer"></div></th>
+                        <th>ASN Diversity<div class="resizer"></div></th>
+                        <th>IP Diversity (All)<div class="resizer"></div></th>
+                        <th>IP Diversity (Groups)<div class="resizer"></div></th>
                         {% for key in result.keys() %}
                             {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
-                                <th>{{ key|capitalize|replace('_', ' ') }}</th>
+                                <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
                             {% endif %}
                         {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{{ result.host|default('N/A') }}</td>
-                        <td>{{ result.asn_diversity|default('N/A') }}</td>
-                        <td>{{ result.ip_diversity_all|default('N/A') }}</td>
-                        <td>{{ result.ip_diversity_groups|default('N/A') }}</td>
+                        <td data-full-text="{{ result.host|default('N/A') }}">{{ result.host|default('N/A') }}</td>
+                        <td data-full-text="{{ result.asn_diversity|default('N/A') }}">{{ result.asn_diversity|default('N/A') }}</td>
+                        <td data-full-text="{{ result.ip_diversity_all|default('N/A') }}">{{ result.ip_diversity_all|default('N/A') }}</td>
+                        <td data-full-text="{{ result.ip_diversity_groups|default('N/A') }}">{{ result.ip_diversity_groups|default('N/A') }}</td>
                         {% for key in result.keys() %}
                             {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
-                                <td>{{ result[key] }}</td>
+                                <td data-full-text="{{ result[key] }}">{{ result[key] }}</td>
                             {% endif %}
                         {% endfor %}
                     </tr>
@@ -142,19 +237,19 @@
             <table class="table table-sm table-striped domain-info-table">
                 <thead>
                     <tr>
-                        <th>IP Address</th>
-                        <th>ASN</th>
-                        <th>First Seen</th>
-                        <th>Last Seen</th>
+                        <th>IP Address<div class="resizer"></div></th>
+                        <th>ASN<div class="resizer"></div></th>
+                        <th>First Seen<div class="resizer"></div></th>
+                        <th>Last Seen<div class="resizer"></div></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for entry in result.timeline %}
                     <tr>
-                        <td>{{ entry.ip }}</td>
-                        <td>{{ entry.asn }}</td>
-                        <td>{{ entry.first_seen }}</td>
-                        <td>{{ entry.last_seen }}</td>
+                        <td data-full-text="{{ entry.ip }}">{{ entry.ip }}</td>
+                        <td data-full-text="{{ entry.asn }}">{{ entry.asn }}</td>
+                        <td data-full-text="{{ entry.first_seen }}">{{ entry.first_seen }}</td>
+                        <td data-full-text="{{ entry.last_seen }}">{{ entry.last_seen }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -166,22 +261,22 @@
             <table class="table table-striped domain-info-table">
                 <thead>
                     <tr>
-                        <th class="index-column">#</th>
-                        <th>Domain</th>
-                        <th>ASN Diversity</th>
-                        <th>IP Diversity (All)</th>
-                        <th>IP Diversity (Groups)</th>
+                        <th class="index-column">#<div class="resizer"></div></th>
+                        <th>Domain<div class="resizer"></div></th>
+                        <th>ASN Diversity<div class="resizer"></div></th>
+                        <th>IP Diversity (All)<div class="resizer"></div></th>
+                        <th>IP Diversity (Groups)<div class="resizer"></div></th>
                         {% if result %}
                             {% for key in result.keys() %}
                                 {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
-                                    <th>{{ key|capitalize|replace('_', ' ') }}</th>
+                                    <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
                                 {% endif %}
                             {% endfor %}
                         {% elif all_results|length > 0 %}
                             {% set sample_result = all_results[0] %}
                             {% for key in sample_result.keys() %}
                                 {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and sample_result[key] is not mapping and sample_result[key] is not sequence %}
-                                    <th>{{ key|capitalize|replace('_', ' ') }}</th>
+                                    <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -191,13 +286,13 @@
                     {% if result %}
                     <tr>
                         <td class="index-column">1</td>
-                        <td>{{ result.host|default('N/A') }}</td>
-                        <td>{{ result.asn_diversity|default('N/A') }}</td>
-                        <td>{{ result.ip_diversity_all|default('N/A') }}</td>
-                        <td>{{ result.ip_diversity_groups|default('N/A') }}</td>
+                        <td data-full-text="{{ result.host|default('N/A') }}">{{ result.host|default('N/A') }}</td>
+                        <td data-full-text="{{ result.asn_diversity|default('N/A') }}">{{ result.asn_diversity|default('N/A') }}</td>
+                        <td data-full-text="{{ result.ip_diversity_all|default('N/A') }}">{{ result.ip_diversity_all|default('N/A') }}</td>
+                        <td data-full-text="{{ result.ip_diversity_groups|default('N/A') }}">{{ result.ip_diversity_groups|default('N/A') }}</td>
                         {% for key in result.keys() %}
                             {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
-                                <td>{{ result[key] }}</td>
+                                <td data-full-text="{{ result[key] }}">{{ result[key] }}</td>
                             {% endif %}
                         {% endfor %}
                     </tr>
@@ -205,13 +300,13 @@
                         {% for result_item in all_results %}
                         <tr>
                             <td class="index-column">{{ loop.index }}</td>
-                            <td>{{ result_item.host|default('N/A') }}</td>
-                            <td>{{ result_item.asn_diversity|default('N/A') }}</td>
-                            <td>{{ result_item.ip_diversity_all|default('N/A') }}</td>
-                            <td>{{ result_item.ip_diversity_groups|default('N/A') }}</td>
+                            <td data-full-text="{{ result_item.host|default('N/A') }}">{{ result_item.host|default('N/A') }}</td>
+                            <td data-full-text="{{ result_item.asn_diversity|default('N/A') }}">{{ result_item.asn_diversity|default('N/A') }}</td>
+                            <td data-full-text="{{ result_item.ip_diversity_all|default('N/A') }}">{{ result_item.ip_diversity_all|default('N/A') }}</td>
+                            <td data-full-text="{{ result_item.ip_diversity_groups|default('N/A') }}">{{ result_item.ip_diversity_groups|default('N/A') }}</td>
                             {% for key in result_item.keys() %}
                                 {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result_item[key] is not mapping and result_item[key] is not sequence %}
-                                    <td>{{ result_item[key] }}</td>
+                                    <td data-full-text="{{ result_item[key] }}">{{ result_item[key] }}</td>
                                 {% endif %}
                             {% endfor %}
                         </tr>
@@ -221,5 +316,360 @@
             </table>
         </div>
         {% endif %}
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize all tables with the resizable and reorderable functionality
+                document.querySelectorAll('.domain-info-table').forEach(initTable);
+                
+                function initTable(table) {
+                    const headers = table.querySelectorAll('th');
+                    
+                    // Initialize default column widths - assign a reasonable default width to each column
+                    initializeColumnWidths(table);
+                    
+                    // Initialize column resizing
+                    headers.forEach(initResizableColumn);
+                    
+                    // Initialize column reordering
+                    headers.forEach(initDraggableColumn);
+                    
+                    // Check for truncated content initially
+                    checkTruncatedCells(table);
+                }
+                
+                function initializeColumnWidths(table) {
+                    // Set default column widths to preserve space for all columns
+                    const headers = table.querySelectorAll('thead th');
+                    const totalHeaders = headers.length;
+                    
+                    if (totalHeaders > 0) {
+                        // Calculate initial width for columns 
+                        // The Index column (#) stays at 50px, other columns get an equal share of remaining width
+                        const defaultColWidth = '150px'; // Fixed width for all non-index columns
+                        const tableWidth = headers.length * 150; // Make table wide enough to hold all columns
+                        
+                        // Set table width
+                        table.style.width = tableWidth + 'px';
+                        
+                        // Set column widths
+                        headers.forEach((th, i) => {
+                            if (!th.classList.contains('index-column')) {
+                                th.style.width = defaultColWidth;
+                                th.style.minWidth = defaultColWidth;
+                            }
+                        });
+                    }
+                }
+                
+                function initResizableColumn(th) {
+                    const resizer = th.querySelector('.resizer');
+                    if (!resizer) return;
+                    
+                    let startX, startWidth;
+                    const table = th.closest('table');
+                    
+                    function startResize(e) {
+                        e.stopPropagation(); // Prevent header drag
+                        e.preventDefault(); // Prevent any default behavior
+                        
+                        startX = e.pageX || e.touches?.[0].pageX;
+                        startWidth = th.offsetWidth;
+                        
+                        // Add class to indicate resizing is in progress
+                        document.body.classList.add('resizing');
+                        th.classList.add('resizing');
+                        
+                        // Disable draggable attribute during resize
+                        th.setAttribute('draggable', 'false');
+                        
+                        document.addEventListener('mousemove', resize);
+                        document.addEventListener('touchmove', resize);
+                        document.addEventListener('mouseup', stopResize);
+                        document.addEventListener('touchend', stopResize);
+                    }
+                    
+                    function resize(e) {
+                        const currentX = e.pageX || e.touches?.[0].pageX;
+                        const width = startWidth + (currentX - startX);
+                        
+                        // Allow any width - content will be truncated with ellipsis
+                        const minWidth = 30; // Absolute minimum width
+                        
+                        if (width > minWidth) {
+                            // Set the new width for this column
+                            th.style.width = `${width}px`;
+                            th.style.minWidth = `${width}px`;
+                            
+                            // Expand table width if needed
+                            const tableWidth = calculateTableWidth(table);
+                            table.style.width = `${tableWidth}px`;
+                            
+                            // Get the column index to update all cells in this column
+                            const colIndex = Array.from(th.parentElement.children).indexOf(th);
+                            
+                            // Update all cells in this column
+                            const cells = Array.from(table.querySelectorAll('tbody tr')).map(
+                                row => row.children[colIndex]
+                            );
+                            
+                            // Check for truncated content
+                            cells.forEach(checkTruncated);
+                        }
+                        
+                        // Prevent text selection during resize
+                        e.preventDefault();
+                    }
+                    
+                    function stopResize() {
+                        document.removeEventListener('mousemove', resize);
+                        document.removeEventListener('touchmove', resize);
+                        document.removeEventListener('mouseup', stopResize);
+                        document.removeEventListener('touchend', stopResize);
+                        
+                        // Remove resizing classes
+                        document.body.classList.remove('resizing');
+                        th.classList.remove('resizing');
+                        
+                        // Re-enable draggable attribute
+                        th.setAttribute('draggable', 'true');
+                        
+                        // Check all cells for truncation after resize completes
+                        checkTruncatedCells(table);
+                    }
+                    
+                    function calculateTableWidth(table) {
+                        // Calculate the table width based on the sum of all column widths
+                        const headers = table.querySelectorAll('thead th');
+                        let totalWidth = 0;
+                        
+                        headers.forEach(header => {
+                            totalWidth += header.offsetWidth;
+                        });
+                        
+                        // Add a small buffer
+                        return totalWidth + 5;
+                    }
+                    
+                    // Use mousedown/touchstart for resize handle
+                    resizer.addEventListener('mousedown', startResize);
+                    resizer.addEventListener('touchstart', startResize);
+                    
+                    // Prevent the resize handle from triggering dragging
+                    resizer.addEventListener('dragstart', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return false;
+                    });
+                }
+                
+                function checkTruncatedCells(table) {
+                    const cells = table.querySelectorAll('td');
+                    cells.forEach(checkTruncated);
+                }
+                
+                function checkTruncated(cell) {
+                    if (!cell) return;
+                    
+                    // Reset the truncated class
+                    cell.classList.remove('truncated');
+                    
+                    // Check if content is truncated
+                    if (cell.offsetWidth < cell.scrollWidth) {
+                        cell.classList.add('truncated');
+                    }
+                }
+                
+                function initDraggableColumn(th) {
+                    // We'll track data at table level instead of individual headers
+                    const table = th.closest('table');
+                    if (!table.dragData) {
+                        table.dragData = {
+                            draggedColumn: null,
+                            placeholder: null,
+                            startIndex: null
+                        };
+                    }
+                    
+                    // Make header draggable
+                    th.setAttribute('draggable', true);
+                    
+                    th.addEventListener('dragstart', function(e) {
+                        // Don't start drag if we're currently resizing or if the target is the resizer
+                        if (document.body.classList.contains('resizing') || 
+                            th.classList.contains('resizing') ||
+                            e.target.classList.contains('resizer') || 
+                            e.target.closest('.resizer')) {
+                            e.preventDefault();
+                            return false;
+                        }
+                        
+                        // Store data for this drag operation
+                        table.dragData.draggedColumn = th;
+                        table.dragData.draggedColumn.classList.add('dragging');
+                        
+                        // Store the column index for reference
+                        const row = th.parentNode;
+                        table.dragData.startIndex = Array.from(row.children).indexOf(th);
+                        
+                        // Create ghost image for drag
+                        const dragImage = th.cloneNode(true);
+                        dragImage.style.opacity = '0.7';
+                        dragImage.style.position = 'absolute';
+                        dragImage.style.top = '-1000px';
+                        document.body.appendChild(dragImage);
+                        
+                        // Set the drag image and data
+                        e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
+                        e.dataTransfer.setData('text/plain', table.dragData.startIndex.toString());
+                        e.dataTransfer.effectAllowed = 'move';
+                        
+                        // Clean up ghost image after drag starts
+                        setTimeout(() => document.body.removeChild(dragImage), 0);
+                        
+                        return true;
+                    });
+                    
+                    th.addEventListener('dragover', function(e) {
+                        e.preventDefault(); // Allow drop
+                        
+                        if (!table.dragData.draggedColumn || table.dragData.draggedColumn === th) {
+                            return;
+                        }
+                        
+                        // Determine if we're dropping to the left or right of this column
+                        const rect = th.getBoundingClientRect();
+                        const mouseX = e.clientX;
+                        const insertBefore = mouseX < (rect.left + rect.width / 2);
+                        
+                        // Remove old placeholder
+                        if (table.dragData.placeholder) {
+                            table.dragData.placeholder.remove();
+                        }
+                        
+                        // Create placeholder to visualize insertion point
+                        table.dragData.placeholder = document.createElement('div');
+                        table.dragData.placeholder.classList.add('drag-placeholder');
+                        table.dragData.placeholder.style.position = 'absolute';
+                        table.dragData.placeholder.style.height = `${rect.height}px`;
+                        table.dragData.placeholder.style.width = '4px';
+                        table.dragData.placeholder.style.top = `${rect.top}px`;
+                        table.dragData.placeholder.style.left = insertBefore ? `${rect.left}px` : `${rect.right - 4}px`;
+                        table.dragData.placeholder.style.backgroundColor = '#0066cc';
+                        table.dragData.placeholder.style.zIndex = '100';
+                        
+                        document.body.appendChild(table.dragData.placeholder);
+                        
+                        return false;
+                    });
+                    
+                    th.addEventListener('dragleave', function() {
+                        // Clean up placeholder on leave
+                        if (table.dragData.placeholder) {
+                            table.dragData.placeholder.remove();
+                            table.dragData.placeholder = null;
+                        }
+                    });
+                    
+                    th.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        
+                        if (!table.dragData.draggedColumn || table.dragData.draggedColumn === th) {
+                            return false;
+                        }
+                        
+                        // Get the dragged column's index and target position
+                        const startIndex = table.dragData.startIndex;
+                        const targetIndex = Array.from(th.parentNode.children).indexOf(th);
+                        
+                        // Determine insert position (before or after target)
+                        const rect = th.getBoundingClientRect();
+                        const mouseX = e.clientX;
+                        const insertBefore = mouseX < (rect.left + rect.width / 2);
+                        
+                        // Calculate final position
+                        let finalIndex = insertBefore ? targetIndex : targetIndex + 1;
+                        
+                        // If moving right, and the source is before target, adjust index
+                        // because removal of source will shift positions
+                        if (startIndex < finalIndex) {
+                            finalIndex--;
+                        }
+                        
+                        // Only proceed if column position actually changes
+                        if (startIndex !== finalIndex) {
+                            moveTableColumn(table, startIndex, finalIndex);
+                            
+                            // Check for truncated content after columns are moved
+                            checkTruncatedCells(table);
+                        }
+                        
+                        // Clean up
+                        if (table.dragData.placeholder) {
+                            table.dragData.placeholder.remove();
+                            table.dragData.placeholder = null;
+                        }
+                        
+                        table.dragData.draggedColumn.classList.remove('dragging');
+                        table.dragData.draggedColumn = null;
+                        
+                        return false;
+                    });
+                    
+                    th.addEventListener('dragend', function(e) {
+                        // Clean up regardless of drop result
+                        if (table.dragData.placeholder) {
+                            table.dragData.placeholder.remove();
+                            table.dragData.placeholder = null;
+                        }
+                        
+                        if (table.dragData.draggedColumn) {
+                            table.dragData.draggedColumn.classList.remove('dragging');
+                            table.dragData.draggedColumn = null;
+                        }
+                    });
+                }
+                
+                function moveTableColumn(table, fromIndex, toIndex) {
+                    const rows = table.querySelectorAll('tr');
+                    
+                    // Handle column move for each row in the table
+                    rows.forEach(row => {
+                        const cells = Array.from(row.children);
+                        
+                        // Skip if row doesn't have enough cells
+                        if (fromIndex >= cells.length || toIndex > cells.length) {
+                            return;
+                        }
+                        
+                        // Get the cell to move
+                        const cellToMove = cells[fromIndex];
+                        
+                        // Remove the cell to move
+                        row.removeChild(cellToMove);
+                        
+                        // Insert at new position
+                        if (toIndex >= cells.length) {
+                            // Append at end if toIndex is beyond current length
+                            row.appendChild(cellToMove);
+                        } else {
+                            // Get the reference cell - this is where we'll insert before
+                            // We need to get the new array of cells because removal changed the indices
+                            const updatedCells = Array.from(row.children);
+                            const referenceCell = updatedCells[toIndex];
+                            row.insertBefore(cellToMove, referenceCell);
+                        }
+                    });
+                    
+                    // Return true if column was moved successfully
+                    return true;
+                }
+                
+                // Run the truncation check when the page loads and on window resize
+                window.addEventListener('resize', function() {
+                    document.querySelectorAll('.domain-info-table').forEach(checkTruncatedCells);
+                });
+            });
+        </script>
     </div>
 </div>
