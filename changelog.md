@@ -1,5 +1,15 @@
 # Changelog
 
+## May 6, 2025
+- Enhanced Silent Push rendering for search types other than webscan and whois
+- Implemented consolidated table view for displaying multiple non-webscan/whois results in a single card
+- Added proper indexing for table rows with numbered entries
+- Added horizontal scrolling with sticky headers and index column for better navigation of large tables
+- Fixed table width to stay within container boundaries
+- Improved user experience with floating headers that stay visible during vertical scrolling
+- Added visual separation between table headers and content for better readability
+- Optimized table display for both light and dark themes
+
 ## May 1, 2025
 - Fixed Silent Push API integration to only apply scan_date filter to scandata queries
 - Added intelligent endpoint detection to determine if a query is using the scandata endpoint

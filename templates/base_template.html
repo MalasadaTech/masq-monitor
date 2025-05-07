@@ -76,15 +76,25 @@
                     <!-- Standard single-query report -->
                     <!-- Platform-specific result display based on data type -->
                     {% if platform == "silentpush" %}
-                        {% for i in range(results|length) %}
-                            {% set result = results[i] %}
+                        {% if results|length > 0 and 'host' in results[0] and ('asn_diversity' in results[0] or 'ip_diversity_all' in results[0] or 'ip_diversity_groups' in results[0]) %}
+                            <!-- Special case for domain search results - combine into a single card -->
                             <div class="result-container">
-                                <div class="result-number">#{{ i+1 }}</div>
-                                <!-- Begin template: {{ get_platform_template(result) }} -->
-                                {% include get_platform_template(result) %}
-                                <!-- End template: {{ get_platform_template(result) }} -->
+                                {% with all_results=results %}
+                                    {% include 'platforms/silentpush_domainsearch.html' %}
+                                {% endwith %}
                             </div>
-                        {% endfor %}
+                        {% else %}
+                            <!-- Regular silentpush results (webscan, whois, etc.) -->
+                            {% for i in range(results|length) %}
+                                {% set result = results[i] %}
+                                <div class="result-container">
+                                    <div class="result-number">#{{ i+1 }}</div>
+                                    <!-- Begin template: {{ get_platform_template(result) }} -->
+                                    {% include get_platform_template(result) %}
+                                    <!-- End template: {{ get_platform_template(result) }} -->
+                                </div>
+                            {% endfor %}
+                        {% endif %}
                     {% else %}
                         <!-- Default URLScan.io display -->
                         <div class="results">
