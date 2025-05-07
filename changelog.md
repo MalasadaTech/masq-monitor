@@ -13,6 +13,13 @@
 - Improved user experience with floating headers that stay visible during vertical scrolling
 - Added visual separation between table headers and content for better readability
 - Optimized table display for both light and dark themes
+- Enhanced domain search tables with adjustable column widths via drag handles
+- Added column reordering via drag and drop functionality
+- Implemented text truncation with ellipsis for narrow columns
+- Added tooltips to show full content when hovering over truncated cells
+- Ensured table columns can be independently resized without affecting other columns
+- Added horizontal scrollbar when table width exceeds container
+- Improved resize handles with visual indicators to prevent accidental column dragging
 
 ## May 1, 2025
 - Fixed Silent Push API integration to only apply scan_date filter to scandata queries
