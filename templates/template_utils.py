@@ -15,15 +15,12 @@ def get_platform_template(result):
     # Default template
     template_path = 'platforms/urlscan_result.html'
     
-    # For SilentPush results
-    if 'data_type' in result:
-        if result['data_type'] == 'whois':
-            template_path = 'platforms/silentpush_whois.html'
-        elif result['data_type'] == 'webscan':
-            template_path = 'platforms/silentpush_webscan.html'
-        else:
-            # For all other data types, use the domainsearch template that supports table view
-            template_path = 'platforms/silentpush_domainsearch.html'
+    # For SilentPush results - use silentpush_domainsearch.html for all query types
+    if 'platform' in result and result['platform'] == 'silentpush':
+        template_path = 'platforms/silentpush_domainsearch.html'
+    # Alternative detection for SilentPush results that don't have the platform field
+    elif 'data_type' in result:
+        template_path = 'platforms/silentpush_domainsearch.html'
     # Detect SilentPush domain search results by field structure
     elif 'host' in result and ('asn_diversity' in result or 'ip_diversity_all' in result or 'ip_diversity_groups' in result):
         template_path = 'platforms/silentpush_domainsearch.html'

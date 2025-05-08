@@ -1,6 +1,28 @@
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">Domain Search Results</h5>
+        <h5 class="mb-0">
+            {% if all_results and all_results|length > 0 and all_results[0].data_type %}
+                {% if all_results[0].data_type == 'whois' %}
+                    WHOIS Results
+                {% elif all_results[0].data_type == 'webscan' %}
+                    Web Scan Results
+                {% elif all_results[0].data_type == 'domainsearch' or ('host' in all_results[0] and ('asn_diversity' in all_results[0] or 'ip_diversity_all' in all_results[0])) %}
+                    Domain Search Results
+                {% else %}
+                    Silent Push Results
+                {% endif %}
+            {% elif result and result.data_type %}
+                {% if result.data_type == 'whois' %}
+                    WHOIS Information
+                {% elif result.data_type == 'webscan' %}
+                    Web Scan Information
+                {% else %}
+                    Silent Push Results
+                {% endif %}
+            {% else %}
+                Silent Push Results
+            {% endif %}
+        </h5>
     </div>
     <div class="card-body">
         <style>
@@ -200,7 +222,7 @@
         </style>
         
         {% if result and result.timeline %}
-        <!-- Single result with timeline mode -->
+        <!-- Single result with timeline mode - for domain search results -->
         <div class="table-container">
             <table class="table table-striped domain-info-table">
                 <thead>
@@ -255,8 +277,103 @@
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <!-- Multiple results or single result without timeline -->
+        
+        {% elif all_results|length > 0 and all_results[0].data_type and all_results[0].data_type == 'webscan' %}
+        <!-- Web scan results mode -->
+        <div class="table-container">
+            <table class="table table-striped domain-info-table">
+                <thead>
+                    <tr>
+                        <th class="index-column">#<div class="resizer"></div></th>
+                        <th>Domain<div class="resizer"></div></th>
+                        <th>URL<div class="resizer"></div></th>
+                        <th>Title<div class="resizer"></div></th>
+                        <th>IP<div class="resizer"></div></th>
+                        <th>Response<div class="resizer"></div></th>
+                        <th>Server<div class="resizer"></div></th>
+                        <th>Scan Date<div class="resizer"></div></th>
+                        {% set sample_result = all_results[0] %}
+                        {% for key in sample_result.keys() %}
+                            {% if key not in ['domain', 'defanged_domain', 'url', 'defanged_url', 'htmltitle', 'ip', 'response_code', 'server', 'scan_date', 'ssl', 'geoip', 'raw_record', 'raw_data', 'data_type'] %}
+                                <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result_item in all_results %}
+                    <tr>
+                        <td class="index-column">{{ loop.index }}</td>
+                        <td data-full-text="{{ result_item.defanged_domain|default(result_item.domain|default('N/A')) }}">
+                            {{ result_item.defanged_domain|default(result_item.domain|default('N/A')) }}
+                        </td>
+                        <td data-full-text="{{ result_item.defanged_url|default(result_item.url|default('N/A')) }}">
+                            {{ result_item.defanged_url|default(result_item.url|default('N/A')) }}
+                        </td>
+                        <td data-full-text="{{ result_item.htmltitle|default('N/A') }}">{{ result_item.htmltitle|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.ip|default('N/A') }}">{{ result_item.ip|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.response_code|default('N/A') }}">{{ result_item.response_code|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.server|default('N/A') }}">{{ result_item.server|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.scan_date|default('N/A') }}">{{ result_item.scan_date|default('N/A') }}</td>
+                        {% for key in result_item.keys() %}
+                            {% if key not in ['domain', 'defanged_domain', 'url', 'defanged_url', 'htmltitle', 'ip', 'response_code', 'server', 'scan_date', 'ssl', 'geoip', 'raw_record', 'raw_data', 'data_type'] %}
+                                <td data-full-text="{{ result_item[key]|default('N/A') }}">{{ result_item[key]|default('N/A') }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% elif all_results|length > 0 and all_results[0].data_type and all_results[0].data_type == 'whois' %}
+        <!-- WHOIS results mode -->
+        <div class="table-container">
+            <table class="table table-striped domain-info-table">
+                <thead>
+                    <tr>
+                        <th class="index-column">#<div class="resizer"></div></th>
+                        <th>Domain<div class="resizer"></div></th>
+                        <th>Registrar<div class="resizer"></div></th>
+                        <th>Created<div class="resizer"></div></th>
+                        <th>Updated<div class="resizer"></div></th>
+                        <th>Expires<div class="resizer"></div></th>
+                        <th>Name<div class="resizer"></div></th>
+                        <th>Organization<div class="resizer"></div></th>
+                        <th>Email<div class="resizer"></div></th>
+                        {% set sample_result = all_results[0] %}
+                        {% for key in sample_result.keys() %}
+                            {% if key not in ['domain', 'registrar', 'created', 'updated', 'expires', 'name', 'organization', 'email', 'raw_data', 'data_type'] %}
+                                <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result_item in all_results %}
+                    <tr>
+                        <td class="index-column">{{ loop.index }}</td>
+                        <td data-full-text="{{ result_item.domain|default('N/A') }}">{{ result_item.domain|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.registrar|default('N/A') }}">{{ result_item.registrar|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.created|default('N/A') }}">{{ result_item.created|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.updated|default('N/A') }}">{{ result_item.updated|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.expires|default('N/A') }}">{{ result_item.expires|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.name|default('N/A') }}">{{ result_item.name|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.organization|default('N/A') }}">{{ result_item.organization|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.email|default('N/A') }}">{{ result_item.email|default('N/A') }}</td>
+                        {% for key in result_item.keys() %}
+                            {% if key not in ['domain', 'registrar', 'created', 'updated', 'expires', 'name', 'organization', 'email', 'raw_data', 'data_type'] %}
+                                <td data-full-text="{{ result_item[key]|default('N/A') }}">{{ result_item[key]|default('N/A') }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% elif all_results|length > 0 and ('host' in all_results[0] or ('asn_diversity' in all_results[0] or 'ip_diversity_all' in all_results[0])) %}
+        <!-- Domain search results mode -->
         <div class="table-container">
             <table class="table table-striped domain-info-table">
                 <thead>
@@ -266,13 +383,7 @@
                         <th>ASN Diversity<div class="resizer"></div></th>
                         <th>IP Diversity (All)<div class="resizer"></div></th>
                         <th>IP Diversity (Groups)<div class="resizer"></div></th>
-                        {% if result %}
-                            {% for key in result.keys() %}
-                                {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
-                                    <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
-                                {% endif %}
-                            {% endfor %}
-                        {% elif all_results|length > 0 %}
+                        {% if all_results|length > 0 %}
                             {% set sample_result = all_results[0] %}
                             {% for key in sample_result.keys() %}
                                 {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and sample_result[key] is not mapping and sample_result[key] is not sequence %}
@@ -283,31 +394,65 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for result_item in all_results %}
+                    <tr>
+                        <td class="index-column">{{ loop.index }}</td>
+                        <td data-full-text="{{ result_item.host|default('N/A') }}">{{ result_item.host|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.asn_diversity|default('N/A') }}">{{ result_item.asn_diversity|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.ip_diversity_all|default('N/A') }}">{{ result_item.ip_diversity_all|default('N/A') }}</td>
+                        <td data-full-text="{{ result_item.ip_diversity_groups|default('N/A') }}">{{ result_item.ip_diversity_groups|default('N/A') }}</td>
+                        {% for key in result_item.keys() %}
+                            {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result_item[key] is not mapping and result_item[key] is not sequence %}
+                                <td data-full-text="{{ result_item[key] }}">{{ result_item[key] }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% else %}
+        <!-- Generic results mode - adaptable to any structure -->
+        <div class="table-container">
+            <table class="table table-striped domain-info-table">
+                <thead>
+                    <tr>
+                        <th class="index-column">#<div class="resizer"></div></th>
+                        {% if all_results|length > 0 %}
+                            {% set sample_result = all_results[0] %}
+                            {% set columns = [] %}
+                            {% for key, value in sample_result.items() %}
+                                {% if key not in ['raw_data', 'raw_record', 'data_type'] and value is not mapping and value is not sequence %}
+                                    <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
+                                    {% set columns = columns + [key] %}
+                                {% endif %}
+                            {% endfor %}
+                        {% elif result %}
+                            {% set columns = [] %}
+                            {% for key, value in result.items() %}
+                                {% if key not in ['raw_data', 'raw_record', 'data_type'] and value is not mapping and value is not sequence %}
+                                    <th>{{ key|capitalize|replace('_', ' ') }}<div class="resizer"></div></th>
+                                    {% set columns = columns + [key] %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
                     {% if result %}
                     <tr>
                         <td class="index-column">1</td>
-                        <td data-full-text="{{ result.host|default('N/A') }}">{{ result.host|default('N/A') }}</td>
-                        <td data-full-text="{{ result.asn_diversity|default('N/A') }}">{{ result.asn_diversity|default('N/A') }}</td>
-                        <td data-full-text="{{ result.ip_diversity_all|default('N/A') }}">{{ result.ip_diversity_all|default('N/A') }}</td>
-                        <td data-full-text="{{ result.ip_diversity_groups|default('N/A') }}">{{ result.ip_diversity_groups|default('N/A') }}</td>
-                        {% for key in result.keys() %}
-                            {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result[key] is not mapping and result[key] is not sequence %}
-                                <td data-full-text="{{ result[key] }}">{{ result[key] }}</td>
-                            {% endif %}
+                        {% for key in columns %}
+                            <td data-full-text="{{ result[key]|default('N/A') }}">{{ result[key]|default('N/A') }}</td>
                         {% endfor %}
                     </tr>
                     {% elif all_results %}
                         {% for result_item in all_results %}
                         <tr>
                             <td class="index-column">{{ loop.index }}</td>
-                            <td data-full-text="{{ result_item.host|default('N/A') }}">{{ result_item.host|default('N/A') }}</td>
-                            <td data-full-text="{{ result_item.asn_diversity|default('N/A') }}">{{ result_item.asn_diversity|default('N/A') }}</td>
-                            <td data-full-text="{{ result_item.ip_diversity_all|default('N/A') }}">{{ result_item.ip_diversity_all|default('N/A') }}</td>
-                            <td data-full-text="{{ result_item.ip_diversity_groups|default('N/A') }}">{{ result_item.ip_diversity_groups|default('N/A') }}</td>
-                            {% for key in result_item.keys() %}
-                                {% if key not in ['host', 'asn_diversity', 'ip_diversity_all', 'ip_diversity_groups', 'timeline'] and result_item[key] is not mapping and result_item[key] is not sequence %}
-                                    <td data-full-text="{{ result_item[key] }}">{{ result_item[key] }}</td>
-                                {% endif %}
+                            {% for key in columns %}
+                                <td data-full-text="{{ result_item[key]|default('N/A') }}">{{ result_item[key]|default('N/A') }}</td>
                             {% endfor %}
                         </tr>
                         {% endfor %}
