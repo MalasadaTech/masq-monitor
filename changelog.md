@@ -1,5 +1,17 @@
 # Changelog
 
+## May 7, 2025
+- Enhanced Silent Push results visualization by refactoring to use table-based display for all result types
+- Consolidated all Silent Push templates to use silentpush_domainsearch.html as the main template
+- Implemented specialized table layouts for different Silent Push data types (webscan, whois, domain search)
+- Added dynamic card headers that adapt based on the detected data type
+- Created a flexible generic display mode for uncommon result types
+- Maintained all interactive features (resizable/draggable columns, tooltips) across all result types
+- Improved maintenance by centralizing template logic in a single file
+- Made all Silent Push results consistent with the same tabular display format
+- Optimized template selection logic to always use silentpush_domainsearch.html for any Silent Push platform result
+- Enhanced readability with consistent column formatting across different result types
+
 ## May 6, 2025
 - Fixed SilentPush report generation by adding missing data type determination methods
 - Implemented `_determine_silentpush_data_type` method to properly identify webscan, whois, and domain search results
