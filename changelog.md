@@ -1,6 +1,13 @@
 # Changelog
 
 ## May 7, 2025
+- Enhanced group report template to match the styling of individual reports
+- Added proper `meta` and `metadata-section` elements to group reports for visual consistency
+- Implemented metadata sections for both the group overview and individual queries within group reports
+- Ensured TLP markings appear consistently in both group and individual reports
+- Fixed group report appearance to maintain the same professional format as individual reports
+- Improved group report organization with clearer query sections and result numbering
+- Added consistent styling for query descriptions, references, notes, and other metadata elements
 - Enhanced Silent Push results visualization by refactoring to use table-based display for all result types
 - Consolidated all Silent Push templates to use silentpush_domainsearch.html as the main template
 - Implemented specialized table layouts for different Silent Push data types (webscan, whois, domain search)

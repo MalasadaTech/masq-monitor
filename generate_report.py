@@ -693,3 +693,466 @@ class ReportGenerator:
                 processed["scan_date_formatted"] = str(record["scan_date"])
                 
         return processed
+
+    def generate_group_report(self, group_name, group_results, tlp_level=None):
+        """Generate a combined HTML report for a group of queries.
+        
+        Args:
+            group_name: Name of the query group
+            group_results: Dictionary of results from each query in the group
+            tlp_level: Optional TLP level for the report
+            
+        Returns:
+            Path to the generated report
+        """
+        print(f"Generating combined report for query group '{group_name}'")
+        
+        # Get group configuration
+        group_config = self.config["queries"].get(group_name, {})
+        
+        # Create a unique output directory for this group report
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_dir = self.output_dir / f"{group_name}_{timestamp}"
+        run_dir.mkdir(exist_ok=True)
+        
+        # Create images directory
+        img_dir = run_dir / "images"
+        img_dir.mkdir(exist_ok=True)
+        
+        # Determine the appropriate TLP level
+        report_tlp = self.determine_tlp_level(group_name, tlp_level)
+        print(f"Report TLP level: {report_tlp}")
+        
+        # Prepare template data
+        template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+        template_env = jinja2.Environment(loader=template_loader)
+        
+        # Add template registry function to the template environment
+        if self.template_registry and hasattr(self.template_registry, 'get_template_for_result'):
+            template_env.globals['get_platform_template'] = self.template_registry.get_template_for_result
+        
+        # Use a group report template if it exists, otherwise create our own custom report
+        try:
+            template = template_env.get_template("group_report_template.html")
+            print("Using group report template.")
+        except jinja2.exceptions.TemplateNotFound:
+            # We'll create a custom report using the base template components
+            template = template_env.get_template("base_template.html")
+            print("Group report template not found. Creating a custom group report.")
+        
+        # Process each query's results
+        all_processed_results = {}
+        result_counts = {}
+        total_results = 0
+        
+        # Process each query's results and copy screenshots
+        for query_name, query_results in group_results.items():
+            # Skip nested query groups
+            if isinstance(query_results, dict) and query_results.get("type") == "query_group":
+                continue
+                
+            # Get query configuration
+            query_config = self.config["queries"].get(query_name, {})
+            platform = query_config.get("platform", "urlscan")
+            
+            # Process results based on platform
+            processed_results = []
+            
+            if platform == "silentpush" and isinstance(query_results, list):
+                # Process SilentPush results
+                for result in query_results:
+                    if not isinstance(result, dict):
+                        continue
+                        
+                    # Determine data type
+                    data_type = self._determine_silentpush_data_type(result)
+                    
+                    if data_type == "whois":
+                        processed_result = self._process_silentpush_whois(result)
+                    elif data_type == "webscan":
+                        processed_result = self._process_silentpush_webscan(result)
+                    elif data_type == "domain_search":
+                        processed_result = result  # Pass through directly
+                    else:
+                        processed_result = {
+                            "data_type": "generic",
+                            "raw_data": result
+                        }
+                    
+                    # Add query name for reference in combined report
+                    processed_result["source_query"] = query_name
+                    processed_results.append(processed_result)
+            elif isinstance(query_results, list):
+                # Process other platform results (URLScan etc.)
+                for result in query_results:
+                    # Add query name for reference in combined report
+                    result["source_query"] = query_name
+                    
+                    # Defang URLs and domains if available
+                    if "page" in result and "url" in result["page"]:
+                        result["defanged_url"] = self._defang_url(result["page"]["url"])
+                    if "page" in result and "domain" in result["page"]:
+                        result["defanged_domain"] = self._defang_domain(result["page"]["domain"])
+                        
+                    # Handle screenshots if available
+                    if "task" in result and "uuid" in result["task"]:
+                        uuid = result["task"]["uuid"]
+                        source_img_path = None
+                        
+                        # Look for screenshot in the individual query's output directory
+                        for subdir in self.output_dir.glob(f"{query_name}_*"):
+                            if subdir.is_dir():
+                                potential_img = subdir / "images" / f"{uuid}.png"
+                                if potential_img.exists():
+                                    source_img_path = potential_img
+                                    break
+                        
+                        # If found, copy it to this report's images directory
+                        if source_img_path:
+                            try:
+                                import shutil
+                                dest_img_path = img_dir / f"{uuid}.png"
+                                shutil.copy2(source_img_path, dest_img_path)
+                                result["local_screenshot"] = f"images/{uuid}.png"
+                            except Exception as e:
+                                print(f"Warning: Could not copy screenshot: {e}")
+                        
+                        # If not found or couldn't copy, still set the path for template rendering
+                        if "local_screenshot" not in result:
+                            result["local_screenshot"] = f"images/{uuid}.png"
+                    
+                    processed_results.append(result)
+            
+            all_processed_results[query_name] = processed_results
+            result_count = len(processed_results)
+            result_counts[query_name] = result_count
+            total_results += result_count
+        
+        # Use the current timestamp
+        current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Create a custom HTML report that properly sections results by query
+        # Only do this if we're falling back to the base template
+        html_content = ""
+        if not hasattr(template, 'name') or template.name == "base_template.html":
+            # Create a custom group report with sections for each query
+            html_parts = []
+            
+            # Add HTML head with styles
+            html_head = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Report: {group_name}</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }}
+        .query-section {{
+            margin-bottom: 40px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }}
+        .query-title {{
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin: -15px -15px 15px -15px;
+            border-bottom: 1px solid #ddd;
+            border-radius: 5px 5px 0 0;
+        }}
+        .result-card {{
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .screenshot {{
+            max-width: 300px;
+            border: 1px solid #ddd;
+        }}
+        .no-results {{
+            font-style: italic;
+            color: #777;
+        }}
+        .tlp-red {{
+            background-color: #f9d2d2;
+            border: 2px solid #e06666;
+            color: #990000;
+            padding: 5px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }}
+        .tlp-amber {{
+            background-color: #fce5cd;
+            border: 2px solid #f6b26b;
+            color: #b45f06;
+            padding: 5px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }}
+        .tlp-green {{
+            background-color: #d9ead3;
+            border: 2px solid #93c47d;
+            color: #38761d;
+            padding: 5px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }}
+        .tlp-white, .tlp-clear {{
+            background-color: #f3f3f3;
+            border: 2px solid #cccccc;
+            color: #666666;
+            padding: 5px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }}
+        .footer {{
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #777;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }}
+        th, td {{
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }}
+        th {{
+            background-color: #f5f5f5;
+        }}
+        .result-meta {{
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }}
+        .query-info {{
+            margin-bottom: 15px;
+        }}
+        .summary {{
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }}
+    </style>
+</head>""".format(group_name=group_name)
+            html_parts.append(html_head)
+            
+            # Add body opening and report header
+            html_parts.append("<body>")
+            
+            # Create TLP class based on level
+            tlp_class = f"tlp-{report_tlp.lower()}"
+            
+            # Get group titles based on TLP level
+            group_titles = group_config.get("titles", [{"title": f"Group Report: {group_name}", "tlp_level": report_tlp}])
+            filtered_titles = [item for item in group_titles if self._is_tlp_visible(item.get("tlp_level", report_tlp), report_tlp)]
+            group_title = filtered_titles[0]["title"] if filtered_titles else f"Group Report: {group_name}"
+            
+            # Add header with group title
+            html_parts.append(f"""
+<div class="header">
+    <h1>{group_title}</h1>
+    <div class="{tlp_class}">TLP:{report_tlp.upper()}</div>
+    <p>Generated on {current_timestamp} by {self.config.get('report_username', '')}</p>
+</div>""")
+            
+            # Add group description if available
+            description = group_config.get("description", "")
+            if description:
+                html_parts.append(f"""
+<div class="summary">
+    <h2>Group Description</h2>
+    <p>{description}</p>
+    <p><strong>Total Results:</strong> {total_results} across {len(all_processed_results)} queries</p>
+</div>""")
+            
+            # Add sections for each query with its results
+            for query_name, results in all_processed_results.items():
+                query_config = self.config["queries"].get(query_name, {})
+                query_description = query_config.get("description", "")
+                query_platform = query_config.get("platform", "urlscan")
+                
+                # Add query section
+                html_parts.append(f"""
+<div class="query-section">
+    <div class="query-title">
+        <h2>{query_name}</h2>
+        <p><strong>Platform:</strong> {query_platform}</p>
+        <p><strong>Results:</strong> {len(results)}</p>
+    </div>
+    <div class="query-info">
+        {f"<p>{query_description}</p>" if query_description else ""}
+        <p><strong>Query:</strong> <code>{query_config.get('query', 'No query string defined')}</code></p>
+    </div>""")
+                
+                # Add query results
+                if results:
+                    # If this is urlscan platform, add standard result cards
+                    if query_platform == "urlscan":
+                        for result in results:
+                            # Get screenshot if available
+                            screenshot_html = ""
+                            if "local_screenshot" in result:
+                                screenshot_html = f'<img class="screenshot" src="{result["local_screenshot"]}" alt="Screenshot" />'
+                            
+                            # Get URL and domain if available
+                            page_url = result.get("page", {}).get("url", "")
+                            page_domain = result.get("page", {}).get("domain", "")
+                            page_title = result.get("page", {}).get("title", "")
+                            
+                            # Get task info
+                            task_time = result.get("task", {}).get("time", "")
+                            formatted_time = task_time
+                            try:
+                                if task_time:
+                                    # Convert to more readable format
+                                    task_datetime = datetime.datetime.fromisoformat(task_time.replace('Z', '+00:00'))
+                                    formatted_time = task_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                            except:
+                                pass
+                            
+                            # Add result card
+                            html_parts.append(f"""
+    <div class="result-card">
+        <h3>{page_title or page_domain or "Untitled Page"}</h3>
+        <div class="result-meta">
+            <p><strong>URL:</strong> {result.get("defanged_url", page_url)}</p>
+            <p><strong>Domain:</strong> {result.get("defanged_domain", page_domain)}</p>
+            <p><strong>Scan Time:</strong> {formatted_time}</p>
+            {f'<p><strong>Task ID:</strong> {result.get("task", {}).get("uuid", "")}</p>' if "task" in result and "uuid" in result["task"] else ""}
+        </div>
+        {screenshot_html}
+    </div>""")
+                    # If this is silentpush, handle different data types
+                    elif query_platform == "silentpush":
+                        for result in results:
+                            data_type = result.get("data_type", "unknown")
+                            
+                            if data_type == "whois":
+                                # Render whois data
+                                html_parts.append(f"""
+    <div class="result-card">
+        <h3>WHOIS: {result.get("domain", "Unknown Domain")}</h3>
+        <div class="result-meta">
+            <p><strong>Domain:</strong> {result.get("defanged_domain", result.get("domain", ""))}</p>
+            <p><strong>Registrar:</strong> {result.get("registrar", "Unknown")}</p>
+            <p><strong>Creation Date:</strong> {result.get("creation_date_formatted", result.get("creation_date", "Unknown"))}</p>
+            <p><strong>Expiration Date:</strong> {result.get("expiration_date_formatted", result.get("expiration_date", "Unknown"))}</p>
+        </div>
+    </div>""")
+                            elif data_type == "webscan":
+                                # Render webscan data
+                                html_parts.append(f"""
+    <div class="result-card">
+        <h3>Web Scan: {result.get("domain", "Unknown Domain")}</h3>
+        <div class="result-meta">
+            <p><strong>URL:</strong> {result.get("defanged_url", result.get("url", ""))}</p>
+            <p><strong>Domain:</strong> {result.get("defanged_domain", result.get("domain", ""))}</p>
+            <p><strong>HTML Title:</strong> {result.get("htmltitle", "")}</p>
+            <p><strong>Scan Date:</strong> {result.get("scan_date_formatted", result.get("scan_date", "Unknown"))}</p>
+        </div>
+    </div>""")
+                            else:
+                                # Generic rendering for other types
+                                html_parts.append(f"""
+    <div class="result-card">
+        <h3>Result: {result.get("host", result.get("domain", "Unknown Item"))}</h3>
+        <p>Data type: {data_type}</p>
+        <pre>{str(result)[:300]}{'...' if len(str(result)) > 300 else ''}</pre>
+    </div>""")
+                else:
+                    # No results for this query
+                    html_parts.append("""
+    <div class="no-results">
+        <p>No results found for this query.</p>
+    </div>""")
+                
+                # Close query section
+                html_parts.append("</div>")
+            
+            # Add footer and closing tags
+            html_parts.append(f"""
+<div class="footer">
+    <p>Generated by Masquerade Monitor on {current_timestamp}</p>
+    <p>TLP:{report_tlp.upper()}</p>
+</div>
+</body>
+</html>""")
+            
+            # Combine all HTML parts
+            html_content = "\n".join(html_parts)
+        else:
+            # Using the group report template
+            html_content = template.render(
+                query_name=group_name,
+                query_data=group_config,
+                group_name=group_name,
+                group_config=group_config,
+                queries=self.config["queries"],
+                all_results=all_processed_results,
+                result_counts=result_counts,
+                results=[],  # Empty list for compatibility with base template
+                total_results=total_results,
+                timestamp=current_timestamp,
+                username=self.config.get("report_username", ""),
+                tlp_level=report_tlp,
+                platform="group",
+                debug=False
+            )
+        
+        # Debug template context if debugging is enabled
+        if self.debug_enabled:
+            debug_template_context("group_report", {
+                "query_name": group_name,
+                "query_data": group_config,
+                "all_results": all_processed_results,
+                "result_counts": result_counts,
+                "total_results": total_results,
+                "tlp_level": report_tlp
+            })
+        
+        # Remove blank lines from HTML content
+        html_content = "\n".join([line for line in html_content.split("\n") if line.strip()])
+        
+        # Extract date/time from run_dir name for the filename
+        dir_name = run_dir.name
+        datetime_part = ""
+        if "_" in dir_name:
+            datetime_part = dir_name.split("_", 1)[1]
+        
+        # Include TLP level and datetime in the filename
+        report_filename = f"group_report_{group_name}_{datetime_part}_TLP-{report_tlp}.html"
+        report_path = run_dir / report_filename
+        
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        print(f"Group report generated in {run_dir} with {total_results} total results")
+        return report_path
