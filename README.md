@@ -20,6 +20,9 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - Extensible template registry for automatically selecting the right template for each result type
 - Saves screenshots of detected sites
 - Generates standalone HTML reports with embedded screenshots
+- Automatically extracts and saves IOCs (Indicators of Compromise) for both urlscan and Silent Push results
+- Flexible IOC extraction supporting varied result formats from different endpoints
+- CSV and JSON export of extracted IOCs (domains, IPs, URLs, etc.)
 - Dedicated report generation module separated from main application logic
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Supports TLP (Traffic Light Protocol) classification for information sharing control
@@ -107,13 +110,15 @@ python masq_monitor.py --list
 python masq_monitor.py --query usaa-domain
 ```
 
+By default, IOCs (domains, IPs, URLs, etc.) are automatically extracted from the results and saved to CSV files.
+
 ### Run a Query Group
 
 ```
 python masq_monitor.py --query-group usaa-monitoring
 ```
 
-Query groups run multiple related queries and create a combined report with sections for each query.
+Query groups run multiple related queries and create a combined report with sections for each query. IOCs from all queries in the group are consolidated and saved.
 
 ### Limit Results to a Specific Number of Days
 
@@ -170,6 +175,14 @@ python masq_monitor.py --query usaa-domain --tlp red
 ```
 
 This will generate the report with a TLP:RED classification regardless of the default setting in the config file.
+
+### Disable IOC Extraction
+
+If you don't want to save IOCs to CSV files, you can disable this feature:
+
+```
+python masq_monitor.py --query usaa-domain --no-iocs
+```
 
 ## Configuration
 
@@ -372,6 +385,13 @@ output/
       [scan-uuid1].png
       [scan-uuid2].png
       ...
+    iocs/
+      query-name_YYYYMMDD_HHMMSS_all_iocs.csv
+      query-name_YYYYMMDD_HHMMSS_domains.csv
+      query-name_YYYYMMDD_HHMMSS_ips.csv
+      query-name_YYYYMMDD_HHMMSS_urls.csv
+      query-name_YYYYMMDD_HHMMSS_iocs.json
+      ...
 ```
 
 For query groups:
@@ -383,9 +403,38 @@ output/
       [scan-uuid1].png
       [scan-uuid2].png
       ...
+    iocs/
+      group-name_combined_YYYYMMDD_HHMMSS_all_iocs.csv
+      group-name_combined_YYYYMMDD_HHMMSS_domains.csv
+      group-name_combined_YYYYMMDD_HHMMSS_iocs.json
+      ...
 ```
 
 The HTML reports are self-contained files with all screenshots embedded as Base64-encoded images, allowing them to be shared or archived as single files without external dependencies.
+
+## IOC Extraction
+
+Masq Monitor automatically extracts Indicators of Compromise (IOCs) from search results for both urlscan and Silent Push platforms. This feature is enabled by default and extracts the following types of indicators:
+
+- Domains
+- IP addresses
+- URLs
+- Page titles
+- Server details
+- Email addresses (Silent Push)
+- Registrars (Silent Push)
+- Nameservers (Silent Push)
+- Organizations (Silent Push)
+
+IOCs are saved to CSV files in an "iocs" directory within each query's output folder. The following files are generated:
+
+- `all_iocs.csv`: Contains all IOCs in a single file with columns for IOC type, value, and scan ID
+- Individual type files (e.g., `domains.csv`, `ips.csv`) that contain just that specific IOC type
+- `iocs.json`: A complete JSON representation of all extracted IOCs
+
+For query groups, a consolidated set of IOCs from all member queries is also generated.
+
+To disable IOC extraction, use the `--no-iocs` flag when running a query.
 
 ## Changelog
 
@@ -401,9 +450,10 @@ For a detailed history of changes and improvements, please see the [changelog.md
 - ✓ Move API keys to .env file for better security
 - ✓ Add support for multiple search platforms including "urlscan" and "silentpush"
 - ✓ Implement Silent Push API integration with both WHOIS and webscan data handling
+- ✓ Implement IOC extraction and saving for both urlscan and Silent Push
+- ✓ Add ability to export results to CSV/JSON
 - Implement email notifications for new findings
 - Support for custom report templates
-- Add ability to export results to CSV/JSON
 
 ### Medium-term (3-6 months)
 - Integrate additional data sources beyond urlscan.io
