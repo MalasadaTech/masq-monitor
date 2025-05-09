@@ -1,5 +1,17 @@
 # Changelog
 
+## May 8, 2025
+- Added capability to extract and save IOCs from urlscan results to CSV files
+- Implemented automatic extraction of domains, IPs, URLs, page titles, and server information
+- Added CSV export in both combined format (one file with all IOCs) and individual type files
+- IOCs are saved by default to an "iocs" directory within each query's output folder
+- Added `--no-iocs` flag to disable IOC saving if not desired
+- Implemented IOC extraction for both live queries and cached results
+- Added support for saving consolidated IOCs for query groups
+- Group IOC reports combine unique indicators from all member queries
+- Enhanced test report generation to support IOC extraction from cached results
+- Added JSON export of IOCs alongside CSV files for easier programmatic access
+
 ## May 7, 2025
 - Enhanced group report template to match the styling of individual reports
 - Added proper `meta` and `metadata-section` elements to group reports for visual consistency
