@@ -79,7 +79,7 @@ class MasqMonitor:
         """Defang a URL to make it safe for sharing."""
         return self.report_generator._defang_url(url)
 
-    def run_query(self, query_name, days=None, tlp_level=None):
+    def run_query(self, query_name, days=None, tlp_level=None, save_iocs=False):
         """Run a specific query from the configuration.
         
         Args:
@@ -88,6 +88,7 @@ class MasqMonitor:
                  If not provided, uses last_run timestamp or falls back to default_days
             tlp_level: Optional. TLP level to apply to this report
                       If not provided, uses query default or global default
+            save_iocs: Optional. Whether to save IOCs to CSV files
                       
         Returns:
             List of results from the query
@@ -242,6 +243,15 @@ class MasqMonitor:
             # Generate the HTML report with the timestamp
             self.report_generator.generate_html_report(results, query_name, run_dir, report_tlp, timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             print(f"Report generated in {run_dir} with {len(results)} results")
+            
+            # If save_iocs is enabled and the platform is urlscan, extract IOCs and save to CSV
+            if save_iocs and platform == "urlscan":
+                iocs_dir = run_dir / "iocs"
+                iocs_dir.mkdir(exist_ok=True)
+                iocs = client.extract_iocs(results)
+                # For normal runs, don't use verbose output (testing_mode=False)
+                csv_paths = client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=False)
+        
         else:
             print(f"No results found for query '{query_name}'")
         
@@ -252,13 +262,14 @@ class MasqMonitor:
         
         return results
 
-    def run_query_group(self, group_name, days=None, tlp_level=None):
+    def run_query_group(self, group_name, days=None, tlp_level=None, save_iocs=False):
         """Run a group of queries and generate a combined report.
         
         Args:
             group_name: Name of the query group to run
             days: Optional. Number of days to limit the search to
             tlp_level: Optional. TLP level to apply to this report
+            save_iocs: Optional. Whether to save IOCs to CSV files for each query
             
         Returns:
             Dictionary with results from each query in the group
@@ -285,13 +296,30 @@ class MasqMonitor:
         # Initialize results dictionary
         self.group_results[group_name] = {}
         
+        # Create a timestamp for the group
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Storage for combined IOCs
+        group_iocs = {
+            "domains": set(),
+            "ips": set(),
+            "urls": set(),
+            "scan_ids": set(),
+            "scan_dates": set(),
+            "page_titles": set(),
+            "server_details": set()
+        }
+        
+        # Flag to track if any IOCs were extracted
+        extracted_iocs = False
+        
         # Run each query in the group
         for query_name in query_names:
             # Check if this is a nested query group
             if query_name in self.config["queries"] and self.config["queries"][query_name].get("type") == "query_group":
                 print(f"Running nested query group '{query_name}'")
                 # Run the nested query group
-                nested_results = self.run_query_group(query_name, days=days, tlp_level=tlp_level)
+                nested_results = self.run_query_group(query_name, days=days, tlp_level=tlp_level, save_iocs=save_iocs)
                 self.group_results[group_name][query_name] = {
                     "type": "query_group",
                     "results": nested_results
@@ -299,11 +327,50 @@ class MasqMonitor:
             else:
                 # Run individual query
                 print(f"Running query '{query_name}' as part of group '{group_name}'")
-                results = self.run_query(query_name, days=days, tlp_level=tlp_level)
+                results = self.run_query(query_name, days=days, tlp_level=tlp_level, save_iocs=save_iocs)
                 self.group_results[group_name][query_name] = results
+                
+                # Extract IOCs from urlscan results and combine them for the group
+                if save_iocs and results:
+                    platform = "urlscan"
+                    if query_name in self.config["queries"]:
+                        platform = self.config["queries"][query_name].get("platform", "urlscan")
+                    
+                    if platform == "urlscan":
+                        # Extract IOCs from the results
+                        query_iocs = self.urlscan_client.extract_iocs(results)
+                        extracted_iocs = True
+                        
+                        # Combine with group IOCs
+                        for ioc_type, values in query_iocs.items():
+                            if isinstance(values, list):
+                                group_iocs[ioc_type].update(values)
                 
         # Generate a combined report after all queries have run
         self.report_generator.generate_group_report(group_name, self.group_results[group_name], tlp_level)
+        
+        # If save_iocs is enabled and any IOCs were extracted, save the combined group IOCs
+        if save_iocs and extracted_iocs:
+            # Create an output directory for the group
+            run_dir = self.output_dir / f"{group_name}_{timestamp}"
+            run_dir.mkdir(exist_ok=True)
+            
+            # Create an IOCs directory
+            iocs_dir = run_dir / "iocs"
+            iocs_dir.mkdir(exist_ok=True)
+            
+            # Convert sets to lists for JSON serialization
+            group_iocs_dict = {k: list(v) for k, v in group_iocs.items()}
+            
+            # Save the combined group IOCs with testing_mode=False to avoid excessive output
+            csv_paths = self.urlscan_client.save_iocs_to_csv(
+                group_iocs_dict, 
+                output_path=iocs_dir, 
+                query_name=f"{group_name}_combined",
+                testing_mode=False
+            )
+            # Simple message about combined IOCs being saved
+            print(f"Combined group IOCs saved to {iocs_dir}")
         
         # Update the last_run timestamp for the group
         current_time = datetime.datetime.now().isoformat()
@@ -442,13 +509,14 @@ class MasqMonitor:
             else:
                 print("  Last Run: Never")
 
-    def test_report_generation(self, query_name, cached_results_path, tlp_level=None):
+    def test_report_generation(self, query_name, cached_results_path, tlp_level=None, save_iocs=False):
         """Generate a test report using saved results without querying APIs.
         
         Args:
             query_name: Name of the query for metadata
             cached_results_path: Path to JSON file with saved platform results
             tlp_level: Optional TLP level for the report
+            save_iocs: Optional. Whether to save IOCs to CSV files
             
         Returns:
             Path to the generated report
@@ -460,7 +528,31 @@ class MasqMonitor:
         if not results:
             print("No results loaded, cannot generate report")
             return None
+        
+        # If save_iocs is enabled, extract and save IOCs
+        if save_iocs:
+            # Determine the platform from the query config
+            platform = "urlscan"
+            if query_name in self.config["queries"]:
+                platform = self.config["queries"][query_name].get("platform", "urlscan")
             
+            if platform == "urlscan":
+                # Create a unique output directory for this run
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                run_dir = self.output_dir / f"{query_name}_{timestamp}_test"
+                run_dir.mkdir(exist_ok=True)
+                
+                # Create iocs directory
+                iocs_dir = run_dir / "iocs"
+                iocs_dir.mkdir(exist_ok=True)
+                
+                # Extract and save IOCs
+                iocs = self.urlscan_client.extract_iocs(results)
+                csv_paths = self.urlscan_client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=True)
+                print(f"IOCs saved to CSV in {iocs_dir}")
+            else:
+                print(f"IOC extraction not supported for platform: {platform}")
+        
         # Generate the test report using the report generator
         return self.report_generator.test_report_generation(query_name, results, tlp_level)
 
@@ -481,6 +573,8 @@ def main():
                         help="Save results to a JSON file for testing")
     parser.add_argument("--cached-results", 
                         help="Path to a JSON file with saved results")
+    parser.add_argument("--no-iocs", action="store_true", 
+                        help="Disable saving IOCs to CSV files (IOCs are saved by default)")
     
     args = parser.parse_args()
     
@@ -489,20 +583,23 @@ def main():
     # Use default_days from config if --days not specified
     days = args.days if args.days is not None else monitor.config.get("default_days")
     
+    # IOCs are saved by default unless --no-iocs is specified
+    save_iocs = not args.no_iocs
+    
     if args.list:
         monitor.list_queries()
     elif args.query and args.cached_results:
         # Generate test report using cached results
-        monitor.test_report_generation(args.query, args.cached_results, tlp_level=args.tlp)
+        monitor.test_report_generation(args.query, args.cached_results, tlp_level=args.tlp, save_iocs=save_iocs)
     elif args.query:
         # Run query and optionally save the results
-        results = monitor.run_query(args.query, days=days, tlp_level=args.tlp)
+        results = monitor.run_query(args.query, days=days, tlp_level=args.tlp, save_iocs=save_iocs)
         if args.save_results and results:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             monitor.save_results(args.query, results, timestamp)
     elif args.query_group:
         # Run a query group
-        group_results = monitor.run_query_group(args.query_group, days=days, tlp_level=args.tlp)
+        group_results = monitor.run_query_group(args.query_group, days=days, tlp_level=args.tlp, save_iocs=save_iocs)
         # Save results from each query if requested
         if args.save_results and group_results:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -513,7 +610,7 @@ def main():
         # Run all individual queries (not query groups)
         for query_name, query_data in monitor.config.get("queries", {}).items():
             if query_data.get("type") != "query_group":
-                results = monitor.run_query(query_name, days=days, tlp_level=args.tlp)
+                results = monitor.run_query(query_name, days=days, tlp_level=args.tlp, save_iocs=save_iocs)
                 if args.save_results and results:
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                     monitor.save_results(query_name, results, timestamp)
@@ -521,7 +618,7 @@ def main():
         # Run all query groups
         for query_name, query_data in monitor.config.get("queries", {}).items():
             if query_data.get("type") == "query_group":
-                group_results = monitor.run_query_group(query_name, days=days, tlp_level=args.tlp)
+                group_results = monitor.run_query_group(query_name, days=days, tlp_level=args.tlp, save_iocs=save_iocs)
                 # Save results from each query if requested
                 if args.save_results and group_results:
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
