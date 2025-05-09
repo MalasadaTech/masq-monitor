@@ -478,3 +478,254 @@ class SilentPushClient:
         except Exception as e:
             print(f"Error encoding image {image_path} to Base64: {e}")
             return None
+    
+    def extract_iocs(self, results):
+        """Extract Indicators of Compromise (IOCs) from Silent Push results.
+        
+        Args:
+            results: List of Silent Push result objects
+            
+        Returns:
+            Dictionary of extracted IOCs
+        """
+        iocs = {
+            "domains": set(),
+            "ips": set(),
+            "urls": set(),
+            "scan_ids": set(),
+            "scan_dates": set(),
+            "page_titles": set(),
+            "server_details": set(),
+            "emails": set(),
+            "registrars": set(),
+            "nameservers": set(),
+            "organizations": set()
+        }
+        
+        for result in results:
+            # For all Silent Push results, try to extract a scan ID/reference
+            if "request_id" in result:
+                iocs["scan_ids"].add(result["request_id"])
+            elif "uuid" in result:
+                iocs["scan_ids"].add(result["uuid"])
+                
+            # Try to extract scan dates from any date fields
+            if "scan_date" in result:
+                iocs["scan_dates"].add(result["scan_date"])
+            elif "created_at" in result:
+                iocs["scan_dates"].add(result["created_at"])
+                
+            # Extract different IOCs based on the type of Silent Push result
+            
+            # General domain extraction (present in most Silent Push results)
+            if "domain" in result:
+                if isinstance(result["domain"], str):
+                    iocs["domains"].add(result["domain"])
+            
+            # Handle "host" field which is used in some Silent Push results (e.g. domain search)
+            if "host" in result:
+                if isinstance(result["host"], str):
+                    iocs["domains"].add(result["host"])
+                    
+            # Extract domain details from whois results
+            if "whois" in result:
+                whois_data = result["whois"]
+                if isinstance(whois_data, dict):
+                    # Extract registrar information
+                    if "registrar" in whois_data:
+                        iocs["registrars"].add(whois_data["registrar"])
+                    
+                    # Extract nameservers
+                    if "nameservers" in whois_data and isinstance(whois_data["nameservers"], list):
+                        for ns in whois_data["nameservers"]:
+                            if isinstance(ns, str):
+                                iocs["nameservers"].add(ns)
+                    
+                    # Extract emails
+                    if "emails" in whois_data and isinstance(whois_data["emails"], list):
+                        for email in whois_data["emails"]:
+                            if isinstance(email, str):
+                                iocs["emails"].add(email)
+            
+            # Extract data from domain search results
+            if "records" in result and isinstance(result["records"], list):
+                for record in result["records"]:
+                    if isinstance(record, dict):
+                        if "name" in record and isinstance(record["name"], str):
+                            iocs["domains"].add(record["name"])
+                        if "email" in record and isinstance(record["email"], str):
+                            iocs["emails"].add(record["email"])
+                        if "organization" in record and isinstance(record["organization"], str):
+                            iocs["organizations"].add(record["organization"])
+            
+            # Extract data from webscan results
+            if "webscan" in result:
+                webscan = result["webscan"]
+                if isinstance(webscan, dict):
+                    # Extract title
+                    if "title" in webscan and isinstance(webscan["title"], str):
+                        iocs["page_titles"].add(webscan["title"])
+                    
+                    # Extract server information
+                    if "server" in webscan and isinstance(webscan["server"], str):
+                        iocs["server_details"].add(webscan["server"])
+                    
+                    # Extract URLs
+                    if "url" in webscan and isinstance(webscan["url"], str):
+                        iocs["urls"].add(webscan["url"])
+                        
+            # Extract IP addresses from various locations
+            if "ip" in result:
+                if isinstance(result["ip"], str):
+                    iocs["ips"].add(result["ip"])
+            
+            if "ips" in result and isinstance(result["ips"], list):
+                for ip in result["ips"]:
+                    if isinstance(ip, str):
+                        iocs["ips"].add(ip)
+                        
+            # Extract DNS resolution data
+            if "dns" in result and isinstance(result["dns"], dict):
+                dns_data = result["dns"]
+                
+                # A records usually contain IP addresses
+                if "a" in dns_data and isinstance(dns_data["a"], list):
+                    for ip in dns_data["a"]:
+                        if isinstance(ip, str):
+                            iocs["ips"].add(ip)
+                
+                # NS records contain nameservers
+                if "ns" in dns_data and isinstance(dns_data["ns"], list):
+                    for ns in dns_data["ns"]:
+                        if isinstance(ns, str):
+                            iocs["nameservers"].add(ns)
+                            
+            # Extract URL from any URL field
+            if "url" in result and isinstance(result["url"], str):
+                iocs["urls"].add(result["url"])
+                
+        # Convert sets to lists for JSON serialization
+        return {k: list(v) for k, v in iocs.items()}
+    
+    def save_iocs_to_csv(self, iocs, output_path=None, query_name=None, testing_mode=False):
+        """Save extracted IOCs to CSV files.
+        
+        Args:
+            iocs: Dictionary of extracted IOCs
+            output_path: Optional. Path to save the CSV files
+            query_name: Optional. Name of the query for the filename
+            testing_mode: Optional. Whether to print verbose output (default: False)
+            
+        Returns:
+            Dictionary with paths of saved CSV files
+        """
+        # Set default output path if not provided
+        if not output_path:
+            output_path = Path("output/iocs")
+        
+        # Create output directory if it doesn't exist
+        output_dir = Path(output_path)
+        output_dir.mkdir(exist_ok=True, parents=True)
+        
+        # Generate a timestamp for filenames
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        prefix = f"{query_name}_{timestamp}" if query_name else timestamp
+        
+        # Save all IOCs to a single CSV file
+        combined_csv_path = output_dir / f"{prefix}_all_iocs.csv"
+        
+        csv_paths = {"combined": str(combined_csv_path)}
+        
+        try:
+            import csv
+            
+            # Create the combined CSV file
+            with open(combined_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['ioc_type', 'value', 'scan_id']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                
+                # Write domains with their scan IDs
+                for domain in iocs.get("domains", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'domain', 'value': domain, 'scan_id': scan_ids})
+                
+                # Write IPs with their scan IDs
+                for ip in iocs.get("ips", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'ip', 'value': ip, 'scan_id': scan_ids})
+                
+                # Write URLs with their scan IDs
+                for url in iocs.get("urls", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'url', 'value': url, 'scan_id': scan_ids})
+                
+                # Write page titles with their scan IDs
+                for title in iocs.get("page_titles", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'title', 'value': title, 'scan_id': scan_ids})
+                
+                # Write server details with their scan IDs
+                for server in iocs.get("server_details", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'server', 'value': server, 'scan_id': scan_ids})
+                    
+                # Write emails with their scan IDs
+                for email in iocs.get("emails", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'email', 'value': email, 'scan_id': scan_ids})
+                
+                # Write registrars with their scan IDs
+                for registrar in iocs.get("registrars", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'registrar', 'value': registrar, 'scan_id': scan_ids})
+                
+                # Write nameservers with their scan IDs
+                for nameserver in iocs.get("nameservers", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'nameserver', 'value': nameserver, 'scan_id': scan_ids})
+                
+                # Write organizations with their scan IDs
+                for org in iocs.get("organizations", []):
+                    scan_ids = ",".join(iocs.get("scan_ids", ["unknown"]))
+                    writer.writerow({'ioc_type': 'organization', 'value': org, 'scan_id': scan_ids})
+            
+            # Only print detailed output in testing mode
+            if testing_mode:
+                print(f"Saved all IOCs to {combined_csv_path}")
+            
+            # Optionally save individual IOC types to separate files
+            for ioc_type, values in iocs.items():
+                if values:  # Only create files for IOC types that have values
+                    ioc_csv_path = output_dir / f"{prefix}_{ioc_type}.csv"
+                    csv_paths[ioc_type] = str(ioc_csv_path)
+                    
+                    with open(ioc_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                        writer = csv.writer(csvfile)
+                        writer.writerow([ioc_type])  # Header
+                        for value in values:
+                            writer.writerow([value])
+                    
+                    # Only print detailed output in testing mode
+                    if testing_mode:
+                        print(f"Saved {len(values)} {ioc_type} to {ioc_csv_path}")
+            
+            # Also save the full IOCs dictionary as JSON for reference
+            import json
+            json_path = output_dir / f"{prefix}_iocs.json"
+            with open(json_path, 'w', encoding='utf-8') as jsonfile:
+                json.dump(iocs, jsonfile, indent=2)
+            
+            csv_paths["json"] = str(json_path)
+            
+            # Only print detailed output in testing mode
+            if testing_mode:
+                print(f"Saved IOCs JSON to {json_path}")
+            else:
+                print(f"IOCs saved to {output_dir}")
+            
+            return csv_paths
+            
+        except Exception as e:
+            print(f"Error saving IOCs to CSV: {e}")
+            return {}

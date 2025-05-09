@@ -244,13 +244,21 @@ class MasqMonitor:
             self.report_generator.generate_html_report(results, query_name, run_dir, report_tlp, timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             print(f"Report generated in {run_dir} with {len(results)} results")
             
-            # If save_iocs is enabled and the platform is urlscan, extract IOCs and save to CSV
-            if save_iocs and platform == "urlscan":
+            # If save_iocs is enabled, extract IOCs and save to CSV based on the platform
+            if save_iocs:
                 iocs_dir = run_dir / "iocs"
                 iocs_dir.mkdir(exist_ok=True)
-                iocs = client.extract_iocs(results)
-                # For normal runs, don't use verbose output (testing_mode=False)
-                csv_paths = client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=False)
+                
+                if platform == "urlscan":
+                    iocs = self.urlscan_client.extract_iocs(results)
+                    # For normal runs, don't use verbose output (testing_mode=False)
+                    csv_paths = self.urlscan_client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=False)
+                    print(f"URLScan IOCs saved to CSV in {iocs_dir}")
+                elif platform == "silentpush":
+                    iocs = self.silentpush_client.extract_iocs(results)
+                    # For normal runs, don't use verbose output (testing_mode=False)
+                    csv_paths = self.silentpush_client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=False)
+                    print(f"Silent Push IOCs saved to CSV in {iocs_dir}")
         
         else:
             print(f"No results found for query '{query_name}'")
@@ -536,22 +544,24 @@ class MasqMonitor:
             if query_name in self.config["queries"]:
                 platform = self.config["queries"][query_name].get("platform", "urlscan")
             
+            # Create a unique output directory for this run
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            run_dir = self.output_dir / f"{query_name}_{timestamp}_test"
+            run_dir.mkdir(exist_ok=True)
+            
+            # Create iocs directory
+            iocs_dir = run_dir / "iocs"
+            iocs_dir.mkdir(exist_ok=True)
+            
+            # Extract and save IOCs based on platform
             if platform == "urlscan":
-                # Create a unique output directory for this run
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                run_dir = self.output_dir / f"{query_name}_{timestamp}_test"
-                run_dir.mkdir(exist_ok=True)
-                
-                # Create iocs directory
-                iocs_dir = run_dir / "iocs"
-                iocs_dir.mkdir(exist_ok=True)
-                
-                # Extract and save IOCs
                 iocs = self.urlscan_client.extract_iocs(results)
                 csv_paths = self.urlscan_client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=True)
-                print(f"IOCs saved to CSV in {iocs_dir}")
-            else:
-                print(f"IOC extraction not supported for platform: {platform}")
+                print(f"URLScan IOCs saved to CSV in {iocs_dir}")
+            elif platform == "silentpush":
+                iocs = self.silentpush_client.extract_iocs(results)
+                csv_paths = self.silentpush_client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=True)
+                print(f"Silent Push IOCs saved to CSV in {iocs_dir}")
         
         # Generate the test report using the report generator
         return self.report_generator.test_report_generation(query_name, results, tlp_level)

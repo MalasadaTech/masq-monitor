@@ -1,6 +1,9 @@
 # Changelog
 
 ## May 8, 2025
+- Enhanced Silent Push IOC extraction to handle various field formats in API responses
+- Added support for extracting domains from both "domain" and "host" fields in Silent Push results
+- Improved flexibility of IOC extraction to handle the varied result formats from different Silent Push endpoints
 - Added capability to extract and save IOCs from urlscan results to CSV files
 - Implemented automatic extraction of domains, IPs, URLs, page titles, and server information
 - Added CSV export in both combined format (one file with all IOCs) and individual type files
