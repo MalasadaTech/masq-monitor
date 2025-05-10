@@ -186,7 +186,9 @@ python masq_monitor.py --query usaa-domain --no-iocs
 
 ## Configuration
 
-The configuration file is in JSON format with the following structure:
+The configuration file can be in either JSON or YAML format. Use `.json` or `.yaml`/`.yml` file extension to specify the format:
+
+### JSON Format
 
 ```json
 {
@@ -196,93 +198,31 @@ The configuration file is in JSON format with the following structure:
     "default_tlp_level": "clear",
     "default_template_path": "templates/report_template.html",
     "queries": {
-        "usaa-title": {
-            "query": "page.title:\"Member Account Login | USAA\"",
-            "platform": "urlscan",
-            "description": "This report shows one subset of phishing sites that masquerade as USAA.",
-            "description_tlp_level": "clear",
-            "query_tlp_level": "green",
-            "default_tlp_level": "clear",
-            "template_path": "templates/custom_template.html",
-            "notes": [
-                {
-                    "tlp_level": "clear",
-                    "text": "This is a report of phishing sites that masquerade as USAA."
-                },
-                {
-                    "tlp_level": "green",
-                    "text": "The query tracks the masqs by the page title. This is data that could be released to fellow analysts, but should be generally withheld from the bad guys."
-                },
-                {
-                    "tlp_level": "red",
-                    "text": "This note has something that shouldn't be shared with the world. This note may contain info like an analyst's name or something."
-                }
-            ],
-            "references": [
-                {
-                    "tlp_level": "clear",
-                    "url": "https://www.usaa.com/security"
-                },
-                {
-                    "tlp_level": "green",
-                    "url": "https://intranet.example.com/usaa-phishing-analysis"
-                },
-                {
-                    "tlp_level": "amber",
-                    "url": "https://intel.example.com/confidential/usaa-2025-report.pdf"
-                }
-            ],
-            "frequency": "Daily",
-            "frequency_tlp_level": "green",
-            "priority": "High",
-            "priority_tlp_level": "green",
-            "tags": [
-                "phishing",
-                "banking"
-            ],
-            "tags_tlp_level": "green",
-            "days": 7,
-            "last_run": "2025-04-20T23:59:54.633456"
-        },
-        "usaa-monitoring": {
-            "type": "query_group",
-            "description": "Comprehensive monitoring for USAA masquerades using multiple detection methods",
-            "description_tlp_level": "clear",
-            "default_tlp_level": "green",
-            "queries": ["usaa-domain", "usaa-title", "usaa-favicon"],
-            "titles": [
-                {
-                    "title": "USAA MASQUERADE MONITORING - COMBINED REPORT",
-                    "tlp_level": "green"
-                },
-                {
-                    "title": "USAA MASQUERADE MONITORING - COMPREHENSIVE DETECTION",
-                    "tlp_level": "amber"
-                }
-            ],
-            "notes": [
-                {
-                    "tlp_level": "green",
-                    "text": "This group combines multiple detection methods for a comprehensive view of USAA masquerade attempts."
-                },
-                {
-                    "tlp_level": "amber",
-                    "text": "The combined approach detects phishing sites through domain patterns, page titles, and favicon hashes."
-                }
-            ],
-            "frequency": "Daily",
-            "frequency_tlp_level": "clear",
-            "priority": "High",
-            "priority_tlp_level": "clear",
-            "tags": ["financial", "usaa", "combined-monitoring"],
-            "tags_tlp_level": "clear",
-            "last_run": null
-        }
+        // query configurations...
     }
 }
 ```
 
-> **Note:** The queries in `config.example.json` are hypothetical examples to demonstrate the configuration structure. They are not guaranteed to return results and references may not be valid links. You should create your own queries based on your specific monitoring needs.
+### YAML Format
+
+```yaml
+output_directory: output
+default_days: 7
+report_username: Your Name
+default_tlp_level: clear
+default_template_path: templates/report_template.html
+queries:
+  # query configurations...
+```
+
+When creating your configuration file, you can choose either format:
+```
+cp config.example.json config.json
+# OR
+cp config.example.yaml config.yaml
+```
+
+YAML format provides a more readable structure for complex configurations, especially for nested query properties and is recommended for easier maintenance as your monitoring queries grow.
 
 ### Configuration Options
 

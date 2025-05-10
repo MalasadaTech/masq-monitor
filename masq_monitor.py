@@ -2,6 +2,7 @@
 
 import os
 import json
+import yaml
 import time
 import argparse
 import datetime
@@ -40,16 +41,20 @@ class MasqMonitor:
         self.report_generator = ReportGenerator(self.config, self.output_dir)
 
     def _load_config(self):
-        """Load configuration from the config file."""
+        """Load configuration from the config file (JSON or YAML)."""
         try:
+            file_extension = Path(self.config_path).suffix.lower()
             with open(self.config_path, 'r') as f:
-                return json.load(f)
+                if file_extension == '.yaml' or file_extension == '.yml':
+                    return yaml.safe_load(f)
+                else:  # Default to JSON
+                    return json.load(f)
         except FileNotFoundError:
             print(f"Config file not found at {self.config_path}.")
-            print("Please create it based on config.example.json.")
+            print("Please create a config file based on the example files.")
             exit(1)
-        except json.JSONDecodeError:
-            print(f"Error parsing the config file at {self.config_path}.")
+        except (json.JSONDecodeError, yaml.YAMLError) as e:
+            print(f"Error parsing the config file at {self.config_path}: {e}")
             exit(1)
 
     def _load_api_key(self, key_name):
@@ -64,10 +69,14 @@ class MasqMonitor:
         return api_key
 
     def _save_config(self):
-        """Save the updated configuration to the config file."""
+        """Save the updated configuration to the config file (JSON or YAML)."""
         try:
+            file_extension = Path(self.config_path).suffix.lower()
             with open(self.config_path, 'w') as f:
-                json.dump(self.config, f, indent=4)
+                if file_extension == '.yaml' or file_extension == '.yml':
+                    yaml.dump(self.config, f, default_flow_style=False)
+                else:  # Default to JSON
+                    json.dump(self.config, f, indent=4)
         except Exception as e:
             print(f"Error saving the config file: {e}")
 
@@ -568,7 +577,8 @@ class MasqMonitor:
 
 def main():
     parser = argparse.ArgumentParser(description="Monitor for masquerades using multiple platforms")
-    parser.add_argument("--config", default="config.json", help="Path to configuration file")
+    parser.add_argument("--config", default="config.json", 
+                        help="Path to configuration file (supports both JSON and YAML formats with .json, .yaml, or .yml extensions)")
     parser.add_argument("--list", action="store_true", help="List available queries")
     parser.add_argument("--query", help="Run a specific query")
     parser.add_argument("--query-group", help="Run a specific query group")
@@ -587,6 +597,17 @@ def main():
                         help="Disable saving IOCs to CSV files (IOCs are saved by default)")
     
     args = parser.parse_args()
+    
+    # Check if config.yaml exists when using default config.json
+    if args.config == "config.json" and not os.path.exists(args.config):
+        yaml_config = "config.yaml"
+        yml_config = "config.yml"
+        if os.path.exists(yaml_config):
+            print(f"No {args.config} found but {yaml_config} exists. Using {yaml_config} instead.")
+            args.config = yaml_config
+        elif os.path.exists(yml_config):
+            print(f"No {args.config} found but {yml_config} exists. Using {yml_config} instead.")
+            args.config = yml_config
     
     monitor = MasqMonitor(config_path=args.config)
     
