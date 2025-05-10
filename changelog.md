@@ -1,6 +1,13 @@
 # Changelog
 
 ## May 10, 2025
+- Added new extension to extract strings from primary requests in URLScan results
+- Extension provides a template for parsing and matching string patterns in HTTP responses
+- Implemented primary request identification in URLScan results
+- Added flexible pattern matching system that can be easily extended
+- Added caching for API responses to minimize repeated requests
+- Implemented metadata extraction including domain, URL, and page title
+- Results are stored in CSV format with defanged URLs and domains for safety
 - Implemented an extension system for post-processing query results
 - Added support for custom user-created extension scripts in the `/extensions/` directory
 - Created example extension to extract Google Tag Manager IDs from URLScan DOM results

@@ -342,9 +342,11 @@ To configure extensions, add them to your configuration file:
 
 ### Included Extensions
 
-Masquerade Monitor comes with an example extension:
+Masquerade Monitor comes with the following extensions:
 
 - **extract_gtm_from_urlscan_dom.py**: Extracts Google Tag Manager IDs from the URLScan DOM, which can be useful for tracking common infrastructure across phishing campaigns.
+
+- **extract_strings_from_primary_request.py**: Extracts string patterns from the primary request responses in URLScan results. This extension identifies the primary HTTP request in a scan, retrieves its response data, and looks for configurable string patterns that might indicate sensitive or malicious content.
 
 ### Creating Your Own Extensions
 
@@ -493,3 +495,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License.
+
