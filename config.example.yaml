@@ -2,6 +2,9 @@
 output_directory: output
 default_days: 7
 report_username: MalasadaTech
+# You can configure a global extension to be used for all queries
+# extensions: 
+#   - extract_gtm_from_urlscan_dom.py
 queries:
   usaa-domain:
     description: Monitoring for scan tasks that have 'usaa' in the domain
@@ -66,6 +69,8 @@ queries:
     platform: urlscan
     description: This shows one subset of phishing sites that masquerade as AAFES.
     description_tlp_level: clear
+    extensions:
+    - extract_gtm_from_urlscan_dom.py
     query_tlp_level: red
     default_tlp_level: clear
     titles:

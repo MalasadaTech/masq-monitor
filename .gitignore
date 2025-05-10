@@ -40,3 +40,12 @@ ENV/
 .vscode/
 *.swp
 *.swo
+
+# Log files
+*.log
+extension_execution_debug.log
+gtm_extension_debug.log
+extension_process_*.log
+urlscan_dom_response*.html
+debug_*.log
+*.log.?

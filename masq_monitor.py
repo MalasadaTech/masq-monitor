@@ -8,6 +8,9 @@ import argparse
 import datetime
 import requests
 import base64
+import subprocess
+import threading
+import importlib.util
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 import jinja2
@@ -39,6 +42,10 @@ class MasqMonitor:
         
         # Initialize the report generator
         self.report_generator = ReportGenerator(self.config, self.output_dir)
+        
+        # Create extensions directory if it doesn't exist
+        self.extensions_dir = Path("extensions")
+        self.extensions_dir.mkdir(exist_ok=True)
 
     def _load_config(self):
         """Load configuration from the config file (JSON or YAML)."""
@@ -268,6 +275,9 @@ class MasqMonitor:
                     # For normal runs, don't use verbose output (testing_mode=False)
                     csv_paths = self.silentpush_client.save_iocs_to_csv(iocs, output_path=iocs_dir, query_name=query_name, testing_mode=False)
                     print(f"Silent Push IOCs saved to CSV in {iocs_dir}")
+            
+            # Run extensions for post-processing
+            self.run_extensions(run_dir, query_name)
         
         else:
             print(f"No results found for query '{query_name}'")
@@ -278,6 +288,158 @@ class MasqMonitor:
         self._save_config()
         
         return results
+
+    def run_extensions(self, run_dir, query_name=None):
+        """Run extensions for post-processing of query results.
+        
+        Args:
+            run_dir: Path to the output directory for this run
+            query_name: Optional name of the query that triggered the extensions
+            
+        This method will run extensions in parallel using threads.
+        Extensions are run in the order they are defined in the config.
+        """
+        # Create extensions directory in run_dir
+        extensions_output_dir = run_dir / "extensions"
+        extensions_output_dir.mkdir(exist_ok=True)
+        
+        # Check if extensions are configured globally
+        global_extensions = self.config.get("extensions", [])
+        
+        # Check if there are query-specific extensions
+        query_extensions = []
+        if query_name and query_name in self.config.get("queries", {}):
+            query_extensions = self.config["queries"][query_name].get("extensions", [])
+        
+        # Combine the lists, query extensions take precedence
+        all_extensions = global_extensions + query_extensions
+        
+        if not all_extensions:
+            return
+        
+        print(f"Running {len(all_extensions)} extension(s)")
+        
+        # Run extensions in separate threads
+        threads = []
+        for extension in all_extensions:
+            extension_path = self.extensions_dir / extension
+            
+            # Check if the extension exists
+            if not extension_path.exists():
+                print(f"Extension '{extension}' not found in extensions directory")
+                continue
+                
+            # Create a thread to run the extension
+            print(f"Running extension: {extension}")
+            thread = threading.Thread(
+                target=self._run_extension,
+                args=(extension_path, run_dir, extensions_output_dir, query_name)
+            )
+            thread.start()
+            threads.append(thread)
+            
+        # Wait for all extensions to complete
+        for thread in threads:
+            thread.join()
+
+    def _run_extension(self, extension_path, run_dir, output_dir, query_name=None):
+        """Run a single extension script.
+        
+        Args:
+            extension_path: Path to the extension script
+            run_dir: Path to the output directory for this run
+            output_dir: Path to the directory where extension should output results
+            query_name: Optional name of the query that triggered the extension
+        """
+        try:
+            print(f"Starting extension execution: {extension_path}")
+            
+            # Create a debug log for all extension executions
+            with open("extension_execution_debug.log", "a") as debug_log:
+                debug_log.write(f"\n\n===== EXTENSION EXECUTION =====\n")
+                debug_log.write(f"Timestamp: {datetime.datetime.now().isoformat()}\n")
+                debug_log.write(f"Extension: {extension_path}\n")
+                debug_log.write(f"Run Dir: {run_dir}\n")
+                debug_log.write(f"Output Dir: {output_dir}\n")
+                debug_log.write(f"Query Name: {query_name}\n")
+                debug_log.write(f"Current Working Dir: {os.getcwd()}\n")
+            
+            # Two options to run extensions:
+            # 1. As a Python module
+            # 2. As a subprocess (for non-Python scripts)
+            
+            # Check file extension to determine how to run it
+            if extension_path.suffix.lower() == ".py":
+                # Run as a Python module
+                try:
+                    print(f"Importing Python module: {extension_path}")
+                    with open("extension_execution_debug.log", "a") as debug_log:
+                        debug_log.write(f"Running as Python module\n")
+                    
+                    # Import the module dynamically
+                    spec = importlib.util.spec_from_file_location(extension_path.stem, extension_path)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    
+                    # Check if the module has a main function
+                    if hasattr(module, "main"):
+                        print(f"Extension has main() function, calling it with: {run_dir}")
+                        with open("extension_execution_debug.log", "a") as debug_log:
+                            debug_log.write(f"Module has main function, calling main({run_dir})\n")
+                        
+                        # Call the main function with the run_dir argument
+                        module.main(str(run_dir))
+                        print(f"Extension {extension_path.name} main() function completed")
+                    else:
+                        print(f"Warning: Extension '{extension_path.name}' does not have a main function")
+                        with open("extension_execution_debug.log", "a") as debug_log:
+                            debug_log.write(f"ERROR: Module does not have main function\n")
+                except Exception as e:
+                    print(f"Error running Python extension '{extension_path.name}': {e}")
+                    import traceback
+                    print(f"Extension error traceback: {traceback.format_exc()}")
+                    with open("extension_execution_debug.log", "a") as debug_log:
+                        debug_log.write(f"ERROR running Python extension: {e}\n")
+                        debug_log.write(traceback.format_exc())
+            else:
+                # Run as a subprocess
+                try:
+                    print(f"Running as subprocess: {extension_path}")
+                    with open("extension_execution_debug.log", "a") as debug_log:
+                        debug_log.write(f"Running as subprocess\n")
+                        debug_log.write(f"Command: {[str(extension_path), str(run_dir)]}\n")
+                    
+                    # Pass the run_dir as an argument
+                    process = subprocess.Popen(
+                        [str(extension_path), str(run_dir)],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    stdout, stderr = process.communicate()
+                    
+                    with open("extension_execution_debug.log", "a") as debug_log:
+                        debug_log.write(f"Subprocess exit code: {process.returncode}\n")
+                        debug_log.write(f"Subprocess stdout: {stdout[:1000]}\n")
+                        debug_log.write(f"Subprocess stderr: {stderr[:1000]}\n")
+                    
+                    if process.returncode != 0:
+                        print(f"Error running extension '{extension_path.name}': {stderr}")
+                except Exception as e:
+                    print(f"Error running extension '{extension_path.name}' as subprocess: {e}")
+                    import traceback
+                    print(f"Extension subprocess error traceback: {traceback.format_exc()}")
+                    with open("extension_execution_debug.log", "a") as debug_log:
+                        debug_log.write(f"ERROR running subprocess: {e}\n")
+                        debug_log.write(traceback.format_exc())
+                    
+        except Exception as e:
+            print(f"Unexpected error running extension '{extension_path.name}': {e}")
+            import traceback
+            print(f"Extension unexpected error traceback: {traceback.format_exc()}")
+            with open("extension_execution_debug.log", "a") as debug_log:
+                debug_log.write(f"UNEXPECTED ERROR: {e}\n")
+                debug_log.write(traceback.format_exc())
 
     def run_query_group(self, group_name, days=None, tlp_level=None, save_iocs=False):
         """Run a group of queries and generate a combined report.

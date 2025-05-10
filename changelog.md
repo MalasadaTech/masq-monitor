@@ -1,5 +1,17 @@
 # Changelog
 
+## May 10, 2025
+- Implemented an extension system for post-processing query results
+- Added support for custom user-created extension scripts in the `/extensions/` directory
+- Created example extension to extract Google Tag Manager IDs from URLScan DOM results
+- Extensions can be configured globally or per-query in the config file
+- Extensions run in parallel using threads to avoid blocking the main application
+- Added configuration options at both global and query levels
+- Extensions receive the run directory as a parameter, allowing access to scan results
+- Added DOM caching capability to avoid repeated requests to external APIs
+- Improved extension error handling and logging
+- Created detailed documentation for implementing custom extensions
+
 ## May 9, 2025
 - Added support for YAML configuration format as an alternative to JSON
 - Modified configuration loading to detect file extension (.yaml, .yml, or .json) and use appropriate parser

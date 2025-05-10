@@ -23,6 +23,7 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - Automatically extracts and saves IOCs (Indicators of Compromise) for both urlscan and Silent Push results
 - Flexible IOC extraction supporting varied result formats from different endpoints
 - CSV and JSON export of extracted IOCs (domains, IPs, URLs, etc.)
+- Extension system for post-processing results with custom Python scripts
 - Dedicated report generation module separated from main application logic
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Supports TLP (Traffic Light Protocol) classification for information sharing control
@@ -197,6 +198,7 @@ The configuration file can be in either JSON or YAML format. Use `.json` or `.ya
     "report_username": "Your Name",
     "default_tlp_level": "clear",
     "default_template_path": "templates/report_template.html",
+    "extensions": ["extract_gtm_from_urlscan_dom.py"],
     "queries": {
         // query configurations...
     }
@@ -211,6 +213,8 @@ default_days: 7
 report_username: Your Name
 default_tlp_level: clear
 default_template_path: templates/report_template.html
+extensions:
+  - extract_gtm_from_urlscan_dom.py
 queries:
   # query configurations...
 ```
@@ -230,6 +234,7 @@ YAML format provides a more readable structure for complex configurations, espec
 - `default_days`: Default number of days to limit the search to if no `last_run` timestamp exists and the `--days` flag is not specified.
 - `report_username`: Your name or username to be displayed in generated reports.
 - `default_template_path`: The default template to use for all queries that don't have a specific template.
+- `extensions`: An array of extension script filenames from the `extensions` directory to run globally for all queries.
 - `queries`: A map of named queries to execute against search platforms.
   - `platform`: Search platform to use for this query. Currently supported: "urlscan", "silentpush". Defaults to "urlscan" if not specified.
   - `query`: The search query string formatted for the specified platform.
@@ -238,6 +243,7 @@ YAML format provides a more readable structure for complex configurations, espec
   - `query_tlp_level`: TLP (Traffic Light Protocol) classification for the query itself. Determines how sensitive the search pattern is. Values: "clear", "white", "green", "amber", "red".
   - `default_tlp_level`: Default TLP classification for report content. Used for report elements without their own explicit TLP level. Values: "clear", "white", "green", "amber", "red".
   - `template_path`: Optional per-query HTML template to use for the report. If not specified, falls back to the global `default_template_path`.
+  - `extensions`: An array of extension script filenames to run specifically for this query, in addition to any global extensions.
   - `reference`: Optional link to documentation or source for the query.
   - `notes`: Additional contextual information about the query.
   - `frequency`: Suggested frequency for running this query (e.g., "daily", "weekly").
@@ -311,6 +317,79 @@ For Silent Push queries, you can use any of the available API endpoints by speci
 ```
 
 If no endpoint is specified for a Silent Push query, the system will default to `/explore/scandata/search/raw`, which is used for general scandata searches.
+
+## Extensions
+
+Masquerade Monitor includes an extension system for post-processing query results with your own custom scripts. Extensions allow you to extract additional data, perform further analysis, or integrate with other tools.
+
+### Using Extensions
+
+Extensions are Python scripts that run after a query has completed. They can access all the query outputs, including IOCs and scan details, and can generate their own output files.
+
+To configure extensions, add them to your configuration file:
+
+```json
+{
+  "extensions": ["extract_gtm_from_urlscan_dom.py"],  // Global extensions that run for all queries
+  "queries": {
+    "banking-domain-search": {
+      "query": "domain:*bank*",
+      "extensions": ["extract_analytics_ids.py"]  // Query-specific extensions
+    }
+  }
+}
+```
+
+### Included Extensions
+
+Masquerade Monitor comes with an example extension:
+
+- **extract_gtm_from_urlscan_dom.py**: Extracts Google Tag Manager IDs from the URLScan DOM, which can be useful for tracking common infrastructure across phishing campaigns.
+
+### Creating Your Own Extensions
+
+To create a custom extension:
+
+1. Create a Python script in the `/extensions/` directory.
+2. Implement a `main(run_dir)` function that processes the results:
+
+```python
+def main(run_dir):
+    """
+    Main entry point for the extension
+    
+    Args:
+        run_dir: Path to the output directory for this query run
+    """
+    # Your code here
+    print(f"Processing results in: {run_dir}")
+    
+    # Access IOCs
+    iocs_dir = Path(run_dir) / "iocs"
+    
+    # Save your findings
+    output_dir = Path(run_dir) / "extensions"
+    output_dir.mkdir(exist_ok=True)
+    
+    # Write results to a file
+    with open(output_dir / "my_extension_results.csv", "w") as f:
+        f.write("data,extracted\n")
+        f.write("example,result\n")
+```
+
+### Extension Output
+
+Extension output is stored in the `/extensions/` directory inside each query's output folder:
+
+```
+output/
+  query-name_YYYYMMDD_HHMMSS/
+    extensions/
+      extract_gtm_from_urlscan_dom.csv
+      my_extension_results.csv
+```
+
+Extensions run in parallel using threads to avoid blocking the main application, and have access to all files generated by the query.
 
 ## Output
 
