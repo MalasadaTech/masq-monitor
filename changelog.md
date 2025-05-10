@@ -1,5 +1,14 @@
 # Changelog
 
+## May 9, 2025
+- Added support for YAML configuration format as an alternative to JSON
+- Modified configuration loading to detect file extension (.yaml, .yml, or .json) and use appropriate parser
+- Updated configuration saving to maintain the same format as the input file
+- Created config.yaml and config.example.yaml files converted from the JSON versions
+- Auto-detection of available YAML config files when JSON config not found
+- Updated documentation to include YAML configuration examples
+- YAML support provides better readability for complex nested query configurations
+
 ## May 8, 2025
 - Enhanced Silent Push IOC extraction to handle various field formats in API responses
 - Added support for extracting domains from both "domain" and "host" fields in Silent Push results

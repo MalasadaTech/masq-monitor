@@ -3,6 +3,7 @@ output/
 
 # Configuration files
 config.json
+config.yaml
 api_key.json
 .env
 .env.*
