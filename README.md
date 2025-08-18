@@ -24,6 +24,7 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - Flexible IOC extraction supporting varied result formats from different endpoints
 - CSV and JSON export of extracted IOCs (domains, IPs, URLs, etc.)
 - Extension system for post-processing results with custom Python scripts
+- CLI support for specifying extensions on-demand with `-x` or `--extension` flags
 - Dedicated report generation module separated from main application logic
 - Includes query metadata (reference, notes, frequency, priority, tags) in reports
 - Supports TLP (Traffic Light Protocol) classification for information sharing control
@@ -200,6 +201,27 @@ Example with the provided hIGMA file:
 ```
 python masq_monitor.py --higma "D:\SoftwareDevelopment\GitHubRepoClones\hIGMA\plugins\urlscan\output\20250817-144704-lummastealer-sectoprat-delivery-page-title-pivot.yaml" --days 3
 ```
+
+### Run with Specific Extensions
+
+You can override the configured extensions and run specific extensions using the `-x` or `--extension` flag:
+
+```
+python masq_monitor.py --query usaa-domain --extension extract_mega_nz_url_and_password.py
+```
+
+Run multiple extensions:
+
+```
+python masq_monitor.py --query usaa-domain -x extract_mega_nz_url_and_password.py -x extract_gtm_from_urlscan_dom.py
+```
+
+Extensions specified via CLI will override any extensions configured in the config file for that run. This is useful for:
+- Testing new extensions without modifying the config
+- Running specific extensions for particular investigations
+- Combining extensions from different queries
+
+The extensions will save their output in the `extensions/` subdirectory of the query's output folder.
 
 ### Specify Custom Config File
 

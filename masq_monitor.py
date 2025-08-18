@@ -22,8 +22,9 @@ from silentpush_client import SilentPushClient
 from generate_report import ReportGenerator
 
 class MasqMonitor:
-    def __init__(self, config_path="config.json"):
+    def __init__(self, config_path="config.json", cli_extensions=None):
         self.config_path = config_path
+        self.cli_extensions = cli_extensions or []  # Store CLI-specified extensions
         # Load environment variables from .env file
         load_dotenv()
         self.config = self._load_config()
@@ -422,16 +423,23 @@ class MasqMonitor:
         extensions_output_dir = run_dir / "extensions"
         extensions_output_dir.mkdir(exist_ok=True)
         
-        # Check if extensions are configured globally
-        global_extensions = self.config.get("extensions", [])
-        
-        # Check if there are query-specific extensions
-        query_extensions = []
-        if query_name and query_name in self.config.get("queries", {}):
-            query_extensions = self.config["queries"][query_name].get("extensions", [])
-        
-        # Combine the lists, query extensions take precedence
-        all_extensions = global_extensions + query_extensions
+        # Determine which extensions to run
+        if self.cli_extensions:
+            # Use CLI-specified extensions
+            all_extensions = self.cli_extensions
+            print(f"Using CLI-specified extensions: {all_extensions}")
+        else:
+            # Use config-based extensions
+            # Check if extensions are configured globally
+            global_extensions = self.config.get("extensions", [])
+            
+            # Check if there are query-specific extensions
+            query_extensions = []
+            if query_name and query_name in self.config.get("queries", {}):
+                query_extensions = self.config["queries"][query_name].get("extensions", [])
+            
+            # Combine the lists, query extensions take precedence
+            all_extensions = global_extensions + query_extensions
         
         if not all_extensions:
             return
@@ -881,6 +889,11 @@ def main():
     parser.add_argument("--higma", 
                         help="Path to a hIGMA output YAML file to parse and execute")
     
+    # Add extension support
+    parser.add_argument("-x", "--extension", action="append", 
+                        help="Specify extension(s) to run (can be used multiple times). "
+                             "If not specified, uses extensions from config file.")
+    
     args = parser.parse_args()
     
     # Check if config.yaml exists when using default config.json
@@ -894,7 +907,7 @@ def main():
             print(f"No {args.config} found but {yml_config} exists. Using {yml_config} instead.")
             args.config = yml_config
     
-    monitor = MasqMonitor(config_path=args.config)
+    monitor = MasqMonitor(config_path=args.config, cli_extensions=args.extension)
     
     # Use default_days from config if --days not specified
     days = args.days if args.days is not None else monitor.config.get("default_days")
