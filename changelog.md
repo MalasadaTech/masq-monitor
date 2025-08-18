@@ -1,6 +1,14 @@
 # Changelog
 
 ## August 17, 2025
+- **Added CLI Extension Support**: New `-x` or `--extension` command line arguments for specifying extensions on-demand
+- Extensions specified via CLI override any extensions configured in the config file for that run
+- Support for multiple extensions via repeated `-x` flags (e.g., `-x ext1.py -x ext2.py`)
+- Extensions now save output to the `extensions/` subdirectory within query output directories
+- Updated extension framework to properly handle both CLI and config-based extension execution
+- Enhanced masq-monitor main function to pass CLI extensions to the MasqMonitor class
+- Fixed Mega.nz extraction extension to be compatible with the masq-monitor framework
+- Updated extension documentation with CLI usage examples and integration details
 - **Added hIGMA Integration**: Full support for running hIGMA output files as input queries
 - New `--higma` command line argument to specify hIGMA YAML output files
 - Automatic parsing and conversion of hIGMA query format to masq-monitor format
