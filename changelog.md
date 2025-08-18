@@ -1,5 +1,14 @@
 # Changelog
 
+## August 17, 2025
+- **Added hIGMA Integration**: Full support for running hIGMA output files as input queries
+- New `--higma` command line argument to specify hIGMA YAML output files
+- Automatic parsing and conversion of hIGMA query format to masq-monitor format
+- Preserves hIGMA metadata including pivot IDs, references, and threat actor information
+- Generates comprehensive HTML reports with screenshots and IOC extraction
+- Includes unit tests for hIGMA integration functionality
+- Updated documentation with hIGMA usage examples and integration details
+
 ## May 10, 2025
 - Added new extension to extract strings from primary requests in URLScan results
 - Extension provides a template for parsing and matching string patterns in HTTP responses
