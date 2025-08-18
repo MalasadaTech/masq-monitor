@@ -95,6 +95,125 @@ class MasqMonitor:
         """Defang a URL to make it safe for sharing."""
         return self.report_generator._defang_url(url)
 
+    def parse_higma_file(self, higma_file_path):
+        """Parse a hIGMA output file and convert it to masq-monitor query format.
+        
+        Args:
+            higma_file_path: Path to the hIGMA output YAML file
+            
+        Returns:
+            Dictionary containing converted queries in masq-monitor format
+        """
+        try:
+            with open(higma_file_path, 'r') as f:
+                higma_data = yaml.safe_load(f)
+                
+            print(f"Parsing hIGMA file: {higma_file_path}")
+            
+            metadata = higma_data.get('metadata', {})
+            queries = higma_data.get('queries', [])
+            
+            converted_queries = {}
+            
+            for query_data in queries:
+                query_id = query_data.get('query_id', 'higma_query')
+                query_string = query_data.get('query', '')
+                description = query_data.get('description', metadata.get('description', ''))
+                pivot_ids = query_data.get('pivot_ids', [])
+                
+                # Use rules_title as the primary query name, with fallback
+                rules_title = metadata.get('rules_title', 'hIGMA Query')
+                # Create a sanitized query name based on rules_title
+                # Replace spaces and special characters with underscores for valid query name
+                sanitized_title = rules_title.lower().replace(' ', '_').replace('-', '_')
+                # Remove any non-alphanumeric characters except underscores
+                import re
+                sanitized_title = re.sub(r'[^a-z0-9_]', '', sanitized_title)
+                query_name = f"{sanitized_title}_{int(time.time())}"
+                
+                # Convert to masq-monitor format
+                converted_query = {
+                    'description': description,
+                    'query': query_string,
+                    'platform': 'urlscan',  # hIGMA URLScan plugin outputs are for URLScan
+                    'notes': metadata.get('description', f"Imported from hIGMA: {rules_title}"),
+                    'frequency': 'on-demand',
+                    'priority': 'medium',
+                    'tags': ['higma', 'imported'] + pivot_ids,
+                    'titles': [
+                        {
+                            'title': rules_title,
+                            'tlp_level': 'clear'
+                        }
+                    ],
+                    'default_tlp_level': 'clear'
+                }
+                
+                # Convert hIGMA references to masq-monitor format
+                higma_references = metadata.get('references', [])
+                if higma_references:
+                    converted_query['references'] = [
+                        {
+                            'tlp_level': 'red',  # Default to TLP red as requested
+                            'url': ref
+                        }
+                        for ref in higma_references
+                    ]
+                
+                # Add implementation notes if available
+                if 'implementation_notes' in query_data:
+                    converted_query['implementation_notes'] = query_data['implementation_notes']
+                
+                converted_queries[query_name] = converted_query
+                
+            print(f"Successfully converted {len(converted_queries)} queries from hIGMA file")
+            return converted_queries
+            
+        except FileNotFoundError:
+            print(f"hIGMA file not found: {higma_file_path}")
+            return {}
+        except yaml.YAMLError as e:
+            print(f"Error parsing hIGMA YAML file: {e}")
+            return {}
+        except Exception as e:
+            print(f"Error processing hIGMA file: {e}")
+            return {}
+
+    def run_higma_queries(self, higma_file_path, days=None, tlp_level=None, save_iocs=False):
+        """Parse a hIGMA file and run all contained queries.
+        
+        Args:
+            higma_file_path: Path to the hIGMA output YAML file
+            days: Optional. Number of days to limit the search to
+            tlp_level: Optional. TLP level to apply to reports
+            save_iocs: Optional. Whether to save IOCs to CSV files
+            
+        Returns:
+            Dictionary mapping query names to their results
+        """
+        converted_queries = self.parse_higma_file(higma_file_path)
+        if not converted_queries:
+            print("No queries found in hIGMA file or parsing failed")
+            return {}
+            
+        all_results = {}
+        
+        # Temporarily add queries to config for execution
+        original_queries = self.config.get("queries", {}).copy()
+        self.config["queries"].update(converted_queries)
+        
+        try:
+            for query_name in converted_queries.keys():
+                print(f"\nRunning hIGMA query: {query_name}")
+                results = self.run_query(query_name, days=days, tlp_level=tlp_level, save_iocs=save_iocs)
+                all_results[query_name] = results
+                
+        finally:
+            # Restore original queries configuration
+            self.config["queries"] = original_queries
+            
+        return all_results
+
     def run_query(self, query_name, days=None, tlp_level=None, save_iocs=False):
         """Run a specific query from the configuration.
         
@@ -758,6 +877,10 @@ def main():
     parser.add_argument("--no-iocs", action="store_true", 
                         help="Disable saving IOCs to CSV files (IOCs are saved by default)")
     
+    # Add hIGMA integration
+    parser.add_argument("--higma", 
+                        help="Path to a hIGMA output YAML file to parse and execute")
+    
     args = parser.parse_args()
     
     # Check if config.yaml exists when using default config.json
@@ -781,6 +904,14 @@ def main():
     
     if args.list:
         monitor.list_queries()
+    elif args.higma:
+        # Run hIGMA queries
+        higma_results = monitor.run_higma_queries(args.higma, days=days, tlp_level=args.tlp, save_iocs=save_iocs)
+        if args.save_results and higma_results:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            for query_name, query_results in higma_results.items():
+                if query_results:
+                    monitor.save_results(query_name, query_results, timestamp)
     elif args.query and args.cached_results:
         # Generate test report using cached results
         monitor.test_report_generation(args.query, args.cached_results, tlp_level=args.tlp, save_iocs=save_iocs)

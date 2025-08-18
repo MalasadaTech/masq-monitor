@@ -41,6 +41,26 @@ It currently supports urlscan.io requests and the Silent Push API (as of April 2
 - Automatic data type detection for Silent Push results (WHOIS vs webscan)
 - Specialized report formatting for different data types
 - Support for all Silent Push API endpoints with configurable endpoint parameter
+- **hIGMA Integration**: Direct support for running hIGMA output files as input queries
+
+## hIGMA Integration
+
+Masquerade Monitor now supports direct integration with [hIGMA](https://github.com/MalasadaTech/hIGMA) output files. You can run masq-monitor using hIGMA-generated YAML files as input:
+
+```bash
+python masq_monitor.py --higma /path/to/higma/output.yaml --days 7
+```
+
+This feature automatically:
+- Parses hIGMA output YAML files
+- Converts hIGMA queries to masq-monitor format using the `rules_title` as the query name
+- Uses hIGMA metadata `description` field for query notes
+- Imports references from hIGMA metadata with TLP level set to 'red' by default
+- Executes the queries against URLScan.io
+- Generates comprehensive HTML reports with screenshots
+- Extracts and saves IOCs in multiple formats (CSV, JSON)
+
+The integration preserves hIGMA metadata including pivot IDs, references, and threat actor information in the generated reports.
 
 ## Example Monitoring Techniques
 
@@ -159,6 +179,26 @@ You can also limit all queries to a timeframe:
 
 ```
 python masq_monitor.py --all --all-groups -d 30
+```
+
+### Run hIGMA Queries
+
+Execute queries from a hIGMA output file:
+
+```
+python masq_monitor.py --higma /path/to/higma/output.yaml
+```
+
+With time limits and TLP level:
+
+```
+python masq_monitor.py --higma /path/to/higma/output.yaml --days 7 --tlp green
+```
+
+Example with the provided hIGMA file:
+
+```
+python masq_monitor.py --higma "D:\SoftwareDevelopment\GitHubRepoClones\hIGMA\plugins\urlscan\output\20250817-144704-lummastealer-sectoprat-delivery-page-title-pivot.yaml" --days 3
 ```
 
 ### Specify Custom Config File
