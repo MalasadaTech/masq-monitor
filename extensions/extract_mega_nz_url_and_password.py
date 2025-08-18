@@ -273,7 +273,7 @@ def process_scan_results(run_dir, cache_responses=True, test_mode=False):
         log_important("Running in test mode with sample data")
         # Use the provided sample response
         sample_html = '''
-        <input type="text" class="form-control" id="txtfile" value="https://mega.nz/file/bV00lCZK#-YMOA10utOaWZP9ZCyfHWPjBtIWHBLZBKZlwwaU0B8E" style="font-size:18px;background: #D6DCE2;width: 90%;margin: 0 auto" />
+        <input type="text" class="form-control" id="txtfile" value="https://mega.nz/file/EXAMPLE" style="font-size:18px;background: #D6DCE2;width: 90%;margin: 0 auto" />
         <p style="color: rgb(144 62 189);font-size: 30px;"> Password is : 2025</p>
         '''
         results = extract_mega_nz_data(sample_html)
