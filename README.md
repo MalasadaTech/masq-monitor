@@ -53,7 +53,9 @@ python masq_monitor.py --higma /path/to/higma/output.yaml --days 7
 
 This feature automatically:
 - Parses hIGMA output YAML files
-- Converts hIGMA queries to masq-monitor format
+- Converts hIGMA queries to masq-monitor format using the `rules_title` as the query name
+- Uses hIGMA metadata `description` field for query notes
+- Imports references from hIGMA metadata with TLP level set to 'red' by default
 - Executes the queries against URLScan.io
 - Generates comprehensive HTML reports with screenshots
 - Extracts and saves IOCs in multiple formats (CSV, JSON)

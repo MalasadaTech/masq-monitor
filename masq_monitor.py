@@ -121,17 +121,22 @@ class MasqMonitor:
                 description = query_data.get('description', metadata.get('description', ''))
                 pivot_ids = query_data.get('pivot_ids', [])
                 
-                # Create a unique query name based on hIGMA metadata
+                # Use rules_title as the primary query name, with fallback
                 rules_title = metadata.get('rules_title', 'hIGMA Query')
-                query_name = f"higma_{query_id}_{int(time.time())}"
+                # Create a sanitized query name based on rules_title
+                # Replace spaces and special characters with underscores for valid query name
+                sanitized_title = rules_title.lower().replace(' ', '_').replace('-', '_')
+                # Remove any non-alphanumeric characters except underscores
+                import re
+                sanitized_title = re.sub(r'[^a-z0-9_]', '', sanitized_title)
+                query_name = f"{sanitized_title}_{int(time.time())}"
                 
                 # Convert to masq-monitor format
                 converted_query = {
                     'description': description,
                     'query': query_string,
                     'platform': 'urlscan',  # hIGMA URLScan plugin outputs are for URLScan
-                    'reference': '\n'.join(metadata.get('references', [])),
-                    'notes': f"Imported from hIGMA: {rules_title}",
+                    'notes': metadata.get('description', f"Imported from hIGMA: {rules_title}"),
                     'frequency': 'on-demand',
                     'priority': 'medium',
                     'tags': ['higma', 'imported'] + pivot_ids,
@@ -143,6 +148,17 @@ class MasqMonitor:
                     ],
                     'default_tlp_level': 'clear'
                 }
+                
+                # Convert hIGMA references to masq-monitor format
+                higma_references = metadata.get('references', [])
+                if higma_references:
+                    converted_query['references'] = [
+                        {
+                            'tlp_level': 'red',  # Default to TLP red as requested
+                            'url': ref
+                        }
+                        for ref in higma_references
+                    ]
                 
                 # Add implementation notes if available
                 if 'implementation_notes' in query_data:
