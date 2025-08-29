@@ -106,7 +106,7 @@ class MasqMonitor:
             Dictionary containing converted queries in masq-monitor format
         """
         try:
-            with open(higma_file_path, 'r') as f:
+            with open(higma_file_path, 'r', encoding='utf-8') as f:
                 higma_data = yaml.safe_load(f)
                 
             print(f"Parsing hIGMA file: {higma_file_path}")
