@@ -1,6 +1,11 @@
 # Changelog
 
 ## August 29, 2025
+- **Fixed Rate Limiting Issues in Mega.nz Extraction Extension**: Implemented enhanced rate limiting for URLScan API calls to prevent 429 "Too Many Requests" errors
+- Added exponential backoff retry mechanism with configurable base delay (2.0 seconds) and maximum retries (3 attempts)
+- Implemented jitter in API call delays to prevent thundering herd effects
+- Enhanced error handling with specific 429 status code detection and automatic retry logic
+- Improved user feedback with progress tracking and retry attempt logging
 - **Fixed Unicode Encoding Issue in hIGMA Integration**: Fixed encoding error when processing hIGMA files containing Unicode characters (e.g., Cyrillic text)
 - Updated `parse_higma_file` method to use UTF-8 encoding when reading YAML files instead of system default encoding
 - Resolves "'charmap' codec can't decode byte" errors on Windows systems when processing international text
