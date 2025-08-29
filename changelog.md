@@ -1,5 +1,10 @@
 # Changelog
 
+## August 29, 2025
+- **Fixed Unicode Encoding Issue in hIGMA Integration**: Fixed encoding error when processing hIGMA files containing Unicode characters (e.g., Cyrillic text)
+- Updated `parse_higma_file` method to use UTF-8 encoding when reading YAML files instead of system default encoding
+- Resolves "'charmap' codec can't decode byte" errors on Windows systems when processing international text
+
 ## August 17, 2025
 - **Added CLI Extension Support**: New `-x` or `--extension` command line arguments for specifying extensions on-demand
 - Extensions specified via CLI override any extensions configured in the config file for that run
