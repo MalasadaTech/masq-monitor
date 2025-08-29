@@ -18,6 +18,7 @@ import time
 import json
 import argparse
 import logging
+import random
 from pathlib import Path
 from urllib.parse import urlparse, urldefrag
 
@@ -30,6 +31,62 @@ logger = logging.getLogger('MegaNZ_Extractor')
 
 # By default, only show minimal logging in production
 VERBOSE = False
+
+# API rate limiting settings
+BASE_DELAY = 2.0  # Base delay between API calls in seconds
+MAX_RETRIES = 3   # Maximum number of retries for rate-limited requests
+BACKOFF_FACTOR = 2.0  # Exponential backoff multiplier
+
+def wait_for_api_call():
+    """Add a delay before making API calls to respect rate limits"""
+    # Add some jitter to avoid thundering herd
+    delay = BASE_DELAY + random.uniform(0, 1.0)
+    log_info(f"Waiting {delay:.1f} seconds before API call...")
+    time.sleep(delay)
+
+def handle_rate_limit_retry(func, *args, **kwargs):
+    """
+    Handle API calls with exponential backoff for rate limits
+    
+    Args:
+        func: Function to call
+        *args, **kwargs: Arguments to pass to the function
+        
+    Returns:
+        Result of the function call, or None if all retries failed
+    """
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            if attempt > 0:
+                # Exponential backoff with jitter
+                wait_time = (BACKOFF_FACTOR ** attempt) * BASE_DELAY + random.uniform(0, 2.0)
+                log_important(f"Rate limited, retrying in {wait_time:.1f} seconds (attempt {attempt + 1}/{MAX_RETRIES + 1})...")
+                time.sleep(wait_time)
+            else:
+                # Always wait before the first attempt
+                wait_for_api_call()
+            
+            result = func(*args, **kwargs)
+            if result is not None:
+                return result
+                
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:  # Rate limited
+                if attempt < MAX_RETRIES:
+                    log_important(f"Rate limited (429), will retry...")
+                    continue
+                else:
+                    log_important(f"Rate limited after {MAX_RETRIES} retries, giving up")
+                    return None
+            else:
+                # Other HTTP errors, don't retry
+                log_important(f"HTTP error {e.response.status_code}: {e}")
+                return None
+        except Exception as e:
+            log_important(f"Unexpected error: {e}")
+            return None
+    
+    return None
 
 def log_info(message):
     """Log info messages based on verbosity level"""
@@ -100,9 +157,9 @@ def get_urlscan_result(scan_id, cache_dir=None):
             except Exception as e:
                 log_info(f"Error reading cached result: {e}")
     
-    # Fetch from URLScan API
-    url = f"https://urlscan.io/api/v1/result/{scan_id}"
-    try:
+    # Use retry mechanism for API call
+    def _fetch_result():
+        url = f"https://urlscan.io/api/v1/result/{scan_id}"
         log_info(f"Fetching URLScan result for scan {scan_id}")
         response = requests.get(url, timeout=30)
         response.raise_for_status()
@@ -116,13 +173,8 @@ def get_urlscan_result(scan_id, cache_dir=None):
             log_info(f"Cached result for scan {scan_id}")
         
         return result_data
-        
-    except requests.exceptions.RequestException as e:
-        log_important(f"Error fetching URLScan result for {scan_id}: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        log_important(f"Error parsing URLScan result JSON for {scan_id}: {e}")
-        return None
+    
+    return handle_rate_limit_retry(_fetch_result)
 
 def find_primary_request_hash(result_data):
     """
@@ -174,9 +226,9 @@ def get_response_content(response_hash, cache_dir=None):
             except Exception as e:
                 log_info(f"Error reading cached response: {e}")
     
-    # Fetch from URLScan API
-    url = f"https://urlscan.io/responses/{response_hash}/"
-    try:
+    # Use retry mechanism for API call
+    def _fetch_response():
+        url = f"https://urlscan.io/responses/{response_hash}/"
         log_info(f"Fetching response content for hash {response_hash}")
         response = requests.get(url, timeout=30)
         response.raise_for_status()
@@ -190,10 +242,8 @@ def get_response_content(response_hash, cache_dir=None):
             log_info(f"Cached response for hash {response_hash}")
         
         return content
-        
-    except requests.exceptions.RequestException as e:
-        log_important(f"Error fetching response content for {response_hash}: {e}")
-        return None
+    
+    return handle_rate_limit_retry(_fetch_response)
 
 def extract_mega_nz_data(html_content):
     """
@@ -286,25 +336,30 @@ def process_scan_results(run_dir, cache_responses=True, test_mode=False):
         log_important("No scan IDs found to process")
         return all_results
     
+    log_important(f"Processing {len(scan_ids)} scan IDs with enhanced rate limiting (base delay: {BASE_DELAY}s)")
+    
     # Set up cache directory if caching is enabled
     cache_dir = Path(run_dir) / "cache" if cache_responses else None
     
-    for scan_id in scan_ids:
-        log_info(f"Processing scan ID: {scan_id}")
+    for i, scan_id in enumerate(scan_ids, 1):
+        log_important(f"Processing scan ID {i}/{len(scan_ids)}: {scan_id}")
         
         # Get URLScan result data
         result_data = get_urlscan_result(scan_id, cache_dir)
         if not result_data:
+            log_important(f"Failed to get result data for scan {scan_id}, skipping")
             continue
         
         # Find primary request hash
         primary_hash = find_primary_request_hash(result_data)
         if not primary_hash:
+            log_info(f"No primary request hash found for scan {scan_id}, skipping")
             continue
         
         # Get response content
         response_content = get_response_content(primary_hash, cache_dir)
         if not response_content:
+            log_important(f"Failed to get response content for hash {primary_hash}, skipping")
             continue
         
         # Extract Mega.nz data
@@ -314,9 +369,6 @@ def process_scan_results(run_dir, cache_responses=True, test_mode=False):
             result['response_hash'] = primary_hash
         
         all_results.extend(results)
-        
-        # Small delay to be respectful to the API
-        time.sleep(0.5)
     
     return all_results
 
